@@ -1,3 +1,5 @@
+package io.github.detachhead.indexer
+
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.io.path.writeText
@@ -15,7 +17,7 @@ class IndexerTests {
 
   @Test
   fun `indexes files created before the watcher started`() = runBlocking {
-    val fileWithToken = (tempDir / "asdf")
+    val fileWithToken = tempDir / "asdf"
     fileWithToken.writeText("foo bar baz")
     (tempDir / "asdf2").writeText("a b c")
     val indexer = TestIndexer()

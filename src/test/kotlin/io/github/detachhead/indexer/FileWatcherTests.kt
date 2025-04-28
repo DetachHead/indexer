@@ -1,3 +1,5 @@
+package io.github.detachhead.indexer
+
 import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
 import kotlin.io.path.createFile
@@ -10,7 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-internal class TestFileWatcher(vararg paths: Path) : FileWatcher(*paths) {
+internal class TestFileWatcher(paths: Set<Path>) : FileWatcher(paths) {
   val loggedEvents = mutableListOf<DirectoryChangeEvent>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
@@ -21,7 +23,7 @@ internal class TestFileWatcher(vararg paths: Path) : FileWatcher(*paths) {
 }
 
 internal suspend fun runWithWatcher(vararg paths: Path, block: suspend TestFileWatcher.() -> Unit) {
-  val watcher = TestFileWatcher(*paths)
+  val watcher = TestFileWatcher(paths.toSet())
   try {
     watcher.block()
   } finally {

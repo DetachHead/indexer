@@ -5,6 +5,7 @@ plugins {
   kotlin("jvm") version kotlinVersion
   kotlin("plugin.power-assert") version kotlinVersion
   id("com.ncorti.ktfmt.gradle") version "0.22.0"
+  id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
 
 group = "io.github.detachhead"

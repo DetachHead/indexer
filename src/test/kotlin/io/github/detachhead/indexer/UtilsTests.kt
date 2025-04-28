@@ -1,3 +1,5 @@
+package io.github.detachhead.indexer
+
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
@@ -6,17 +8,17 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import org.junit.jupiter.api.io.TempDir
 
-class UtilsTest {
+class UtilsTests {
   @TempDir lateinit var tempDir: Path
 
   @Test
   fun isInDirectory() {
-    val dir = (tempDir / "dir").createDirectory()
-    val fileInDir = (dir / "foo").createFile()
-    assert(fileInDir.isInDirectory(dir))
+    val directory = (tempDir / "dir").createDirectory()
+    val fileInDir = (directory / "foo").createFile()
+    assert(fileInDir.isInDirectory(directory))
 
     val fileInOtherDir = ((tempDir / "otherDir").createDirectory() / "bar").createFile()
-    assert(!fileInOtherDir.isInDirectory(dir))
+    assert(!fileInOtherDir.isInDirectory(directory))
   }
 
   @Test

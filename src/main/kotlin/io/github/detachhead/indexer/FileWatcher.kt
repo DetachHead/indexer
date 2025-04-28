@@ -1,3 +1,5 @@
+package io.github.detachhead.indexer
+
 import io.methvin.watcher.DirectoryChangeEvent
 import io.methvin.watcher.DirectoryWatcher
 import java.nio.file.Path
@@ -11,18 +13,18 @@ internal class FileWatcherException(message: String) :
  * wrapper on top of [DirectoryWatcher] that supports watching individual files as well as
  * directories
  */
-internal abstract class FileWatcher(vararg paths: Path) {
+internal abstract class FileWatcher(paths: Set<Path>) {
   internal val watcher: DirectoryWatcher
-
-  /** the directory being watched by [watcher] */
-  val directory: Path
 
   /**
    * the paths to watch that we actually care about. for example if we are watching a single file we
    * need to specify its parent directory to the [watcher], then filter out events related to files
    * we don't care about
    */
-  val paths: MutableSet<Path> = paths.toMutableSet()
+  val paths = paths.toMutableSet()
+
+  /** the directory being watched by [watcher] */
+  val directory: Path
 
   /**
    * whether the watcher is watching a directory normally using [DirectoryWatcher] (`false`) or
@@ -32,7 +34,7 @@ internal abstract class FileWatcher(vararg paths: Path) {
 
   init {
     // TODO: this stuff seems wack
-    val firstPath = paths[0]
+    val firstPath = paths.iterator().next()
     isWatchingFiles =
         if (this.paths.count() == 1) {
           if (firstPath.isDirectory()) {
