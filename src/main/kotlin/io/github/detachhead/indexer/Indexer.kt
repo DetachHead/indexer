@@ -1,3 +1,5 @@
+package io.github.detachhead.indexer
+
 import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -8,8 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-internal class IndexerFileWatcher(vararg paths: Path, val split: (String) -> List<String>) :
-    FileWatcher(*paths) {
+internal class IndexerFileWatcher(paths: Set<Path>, val split: (String) -> List<String>) :
+    FileWatcher(paths) {
   val index = ConcurrentHashMap<Path, List<String>>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
@@ -19,6 +21,7 @@ internal class IndexerFileWatcher(vararg paths: Path, val split: (String) -> Lis
     when (event.eventType()) {
       DirectoryChangeEvent.EventType.CREATE,
       DirectoryChangeEvent.EventType.MODIFY -> updateIndexForFile(path)
+
       DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
       DirectoryChangeEvent.EventType.OVERFLOW -> TODO("what causes overflow?")
     }
@@ -28,8 +31,11 @@ internal class IndexerFileWatcher(vararg paths: Path, val split: (String) -> Lis
     // need to do an initial index of the current state of the watched files, otherwise the index
     // will only be
     // populated with data from files that have changed since the watcher was started
-    if (isWatchingFiles) paths.forEach { updateIndexForFile(it) }
-    else directory.walk().forEach { updateIndexForFile(it) }
+    if (isWatchingFiles) {
+      paths.forEach { updateIndexForFile(it) }
+    } else {
+      directory.walk().forEach { updateIndexForFile(it) }
+    }
     super.watch()
   }
 
@@ -63,7 +69,7 @@ public abstract class Indexer {
         return true
       }
     }
-    val newWatcher = IndexerFileWatcher(path, split = ::split)
+    val newWatcher = IndexerFileWatcher(setOf(path), split = ::split)
     watchers.add(newWatcher)
     scope.launch(Dispatchers.Default) { newWatcher.watch() }
     return true
