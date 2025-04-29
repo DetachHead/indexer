@@ -25,4 +25,15 @@ class IndexerTests {
     delay(1000L) // TODO: can we avoid delay?
     assert(indexer.searchForToken("bar") == setOf(fileWithToken))
   }
+
+  @Test
+  fun `indexes files created while the watcher is running`() = runBlocking {
+    val indexer = TestIndexer()
+    indexer.watchPath(tempDir)
+    delay(1000L) // TODO: can we avoid delay?
+    val fileWithToken = tempDir / "asdf"
+    fileWithToken.writeText("foo bar baz")
+    delay(1000L)
+    assert(indexer.searchForToken("bar") == setOf(fileWithToken))
+  }
 }
