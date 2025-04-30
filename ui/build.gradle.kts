@@ -42,4 +42,4 @@ compose.desktop {
 
 tasks.test { useJUnitPlatform() }
 
-kotlin { jvmToolchain(16) }
+kotlin { jvmToolchain(23) }

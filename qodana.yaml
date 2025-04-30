@@ -1,6 +1,6 @@
 version: 1.0
 linter: jetbrains/qodana-jvm-community:2025.1
-projectJDK: "16"
+projectJDK: "23"
 profile:
   name: qodana.recommended
 exclude:
