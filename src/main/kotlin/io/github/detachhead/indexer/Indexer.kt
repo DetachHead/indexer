@@ -2,7 +2,6 @@ package io.github.detachhead.indexer
 
 import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.io.path.walk
@@ -10,9 +9,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+private typealias SplitFunction = (String) -> List<String>
+
+internal class IndexedFile(val path: Path, val split: SplitFunction) {
+  val index: List<String> by lazy { split(path.readText()) }
+}
+
 internal class IndexerFileWatcher(paths: Set<Path>, val split: (String) -> List<String>) :
     FileWatcher(paths) {
-  val index = ConcurrentHashMap<Path, List<String>>()
+  /**
+   * all watched files should have an entry in the index. if the entry is `null`, it means the file
+   * has not been indexed yet and it will be lazily evaluated
+   */
+  val index = mutableSetOf<IndexedFile>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
     val path = event?.path()
@@ -20,27 +29,20 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: (String) -> List<
 
     when (event.eventType()) {
       DirectoryChangeEvent.EventType.CREATE,
-      DirectoryChangeEvent.EventType.MODIFY -> updateIndexForFile(path)
-
-      DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
+      DirectoryChangeEvent.EventType.MODIFY -> index.add(IndexedFile(path, split))
+      DirectoryChangeEvent.EventType.DELETE -> index.removeIf { it.path == path }
       DirectoryChangeEvent.EventType.OVERFLOW -> TODO("what causes overflow?")
     }
   }
 
   override fun watch() {
     // need to do an initial index of the current state of the watched files, otherwise the index
-    // will only be
-    // populated with data from files that have changed since the watcher was started
-    if (isWatchingFiles) {
-      paths.forEach { updateIndexForFile(it) }
-    } else {
-      directory.walk().forEach { updateIndexForFile(it) }
-    }
+    // will only be populated with data from files that have changed since the watcher was started
+    // TODO: can we avoid converting the result of walk to a set?
+    // TODO: multithreaded walk?
+    val allFiles = if (isWatchingFiles) paths else directory.walk().toSet()
+    index.addAll(allFiles.map { IndexedFile(it, split) })
     super.watch()
-  }
-
-  private fun updateIndexForFile(path: Path) {
-    index[path] = split(path.readText())
   }
 }
 
@@ -84,8 +86,9 @@ public abstract class Indexer {
    */
   public fun searchForToken(token: String): Set<Path> {
     // TODO: multithreaded search
-    val index = combineMaps(watchers.map { it.index }, allowDuplicates = false)
-    return index.filter { entry -> token in entry.value }.keys
+    // TODO: detect duplicates across watchers?
+    val index = watchers.flatMap { it.index }
+    return index.filter { token in it.index }.map { it.path }.toSet()
   }
 
   // TODO: insert some other search functions too eg. For searching a file that contains a specified
