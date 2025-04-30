@@ -20,6 +20,11 @@ dependencies {
   implementation(project(":lib"))
   implementation(compose.desktop.currentOs)
   implementation(compose.material3)
+  implementation(compose.materialIconsExtended)
+  implementation(libs.bonsai)
+  implementation(libs.bonsaiFileSystem)
+  implementation(libs.filekitCore)
+  implementation(libs.filekitDialogsCompose)
   testImplementation(kotlin("test"))
   testImplementation(compose.uiTest)
 }
