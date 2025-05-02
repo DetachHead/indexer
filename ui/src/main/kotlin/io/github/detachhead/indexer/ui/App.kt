@@ -2,9 +2,11 @@ package io.github.detachhead.indexer.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,9 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cafe.adriel.bonsai.core.Bonsai
-import cafe.adriel.bonsai.core.node.Branch
-import cafe.adriel.bonsai.core.tree.Tree
+import io.github.detachhead.indexer.utils.SearchIndexer
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -35,27 +35,29 @@ import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.path
 import java.nio.file.Path
 import kotlin.io.path.Path
+import kotlin.io.path.readText
 import kotlinx.coroutines.launch
-import okio.Path.Companion.toOkioPath
 
+// TODO: ui unit tests
+
+// TODO: update tree view when changes are made to the files on disk
 private val indexer = SearchIndexer()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-  val filteredPaths = remember { mutableStateListOf<Path>() }
+  val watchedPaths = remember { mutableStateListOf<Path>() }
+  var filteredPaths by remember { mutableStateOf<Set<Path>?>(null) }
   var searchText by remember { mutableStateOf("") }
-
+  var openFileContent by remember { mutableStateOf("") }
   val coroutineScope = rememberCoroutineScope()
-
   fun watchPath(file: PlatformFile?) {
     if (file == null) return
     val path = Path(file.path)
-    filteredPaths.add(path)
+    watchedPaths.add(path)
     searchText = ""
     indexer.watchPath(path)
   }
-
   Scaffold(
       topBar = {
         TopAppBar(
@@ -71,7 +73,7 @@ fun App() {
                   onQueryChange = { searchText = it },
                   onSearch = {
                     // TODO: better search
-                    indexer.searchForToken(it)
+                    filteredPaths = indexer.searchForToken(it)
                   })
               IconButton(
                   onClick = {
@@ -98,16 +100,17 @@ fun App() {
         modifier = Modifier.padding(innerPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      Bonsai(
-          Tree<Any> {
-            filteredPaths.forEach {
-              Branch(
-                  it.toString(),
-                  customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") }) {
-                    FileSystemTree(rootPath = it.toOkioPath())
-                  }
-            }
-          })
+      Row(modifier = Modifier.fillMaxWidth()) {
+        WatchedPathsTree(
+            paths = watchedPaths,
+            onlyIncludePaths = filteredPaths,
+            onOpenFile = { openFileContent = it.readText() },
+            modifier = Modifier.weight(1f))
+        FileContents(
+            content = openFileContent,
+            searchText = searchText,
+            modifier = Modifier.weight(2.25f).fillMaxHeight())
+      }
     }
   }
 }
