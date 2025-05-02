@@ -1,4 +1,4 @@
-package io.github.detachhead.indexer.ui
+package io.github.detachhead.indexer.utils
 
 import io.github.detachhead.indexer.Indexer
 

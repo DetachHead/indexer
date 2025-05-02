@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 private typealias SplitFunction = (String) -> List<String>
 
 internal class IndexedFile(val path: Path, val split: SplitFunction) {
+  // TODO: should the index be a set instead?
   val index: List<String> by lazy { split(path.readText()) }
 }
 
