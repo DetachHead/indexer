@@ -8,3 +8,5 @@ exclude:
     paths:
       - .qodana
 failThreshold: 0
+plugins:
+  - id: androidx.compose.plugins.idea
