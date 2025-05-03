@@ -21,7 +21,7 @@ internal abstract class FileWatcher(paths: Set<Path>) {
    * need to specify its parent directory to the [watcher], then filter out events related to files
    * we don't care about
    */
-  val paths = paths.toMutableSet()
+  val paths = paths.map { it.fix() }.toMutableSet()
 
   /** the directory being watched by [watcher] */
   val directory: Path
@@ -34,7 +34,7 @@ internal abstract class FileWatcher(paths: Set<Path>) {
 
   init {
     // TODO: this stuff seems wack
-    val firstPath = paths.iterator().next()
+    val firstPath = this.paths.iterator().next()
     isWatchingFiles =
         if (this.paths.count() == 1) {
           if (firstPath.isDirectory()) {
@@ -63,8 +63,7 @@ internal abstract class FileWatcher(paths: Set<Path>) {
               // since DirectoryWatcher doesn't support watching an individual files we watch the
               // whole directory instead
               // and only call the event if the file we care about was changed
-              || event.path() in this.paths // TODO: do we need to normalize here?
-              ) {
+              || event.path() in this.paths) {
                 onChange(event)
               }
             }
