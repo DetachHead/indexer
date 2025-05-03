@@ -2,8 +2,10 @@ package io.github.detachhead.indexer
 
 import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
+import kotlin.io.path.absolute
 import kotlin.io.path.createFile
 import kotlin.io.path.div
+import kotlin.io.path.relativeTo
 import kotlin.io.path.writeText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -71,6 +73,21 @@ class FileWatcherTests {
       files.map { it.writeText("asdf") }
       delay(1000L)
       assert(loggedEvents.map { it.path() } == listOf(file1, file2))
+    }
+  }
+
+  @Test
+  fun `relative paths`() = runBlocking {
+    val file = (tempDir / "file1").relativeTo(cwd())
+    file.createFile()
+    runWithWatcher(file) {
+      launch(Dispatchers.Default) { watch() }
+      // TODO: is there a better way to wait for the event than hardcoded delays?
+      delay(1000L)
+      assert(loggedEvents.isEmpty())
+      file.writeText("asdf")
+      delay(1000L)
+      assert(loggedEvents.map { it.path() } == listOf(file.normalize().absolute()))
     }
   }
 }
