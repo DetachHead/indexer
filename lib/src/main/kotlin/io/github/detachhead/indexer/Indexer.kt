@@ -4,7 +4,6 @@ import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
-import kotlin.io.path.walk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,6 +11,8 @@ import kotlinx.coroutines.launch
 private typealias SplitFunction = (String) -> Set<String>
 
 internal class IndexedFile(val path: Path, val split: SplitFunction) {
+  // TODO: this fills up the RAM with the contents of all files in the directory when searching,
+  //  which crashes on large directories
   val index: Set<String> by lazy { split(path.readText()) }
 }
 
@@ -34,14 +35,16 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
     }
   }
 
-  override fun watch() {
-    // need to do an initial index of the current state of the watched files, otherwise the index
-    // will only be populated with data from files that have changed since the watcher was started
+  /**
+   * we need to do an initial index of the current state of the watched files, otherwise the index
+   * will only be populated with data from files that have changed since the watcher was started
+   */
+  suspend fun walkAndWatch() {
+
     // TODO: can we avoid converting the result of walk to a set?
-    // TODO: multithreaded walk?
-    val allFiles = if (isWatchingFiles) paths else directory.walk().toSet()
+    val allFiles = if (isWatchingFiles) paths else directory.fastWalk().toSet()
     index.addAll(allFiles.map { IndexedFile(it, split) })
-    super.watch()
+    watch()
   }
 }
 
@@ -72,7 +75,7 @@ public abstract class Indexer {
     }
     val newWatcher = IndexerFileWatcher(setOf(path), split = ::split)
     watchers.add(newWatcher)
-    scope.launch(Dispatchers.Default) { newWatcher.watch() }
+    scope.launch(Dispatchers.Default) { newWatcher.walkAndWatch() }
     return true
   }
 
