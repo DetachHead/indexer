@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 private class TestIndexer : Indexer() {
-  override fun split(fileContent: String): List<String> = fileContent.split(" ")
+  override fun split(fileContent: String): Set<String> = fileContent.split(" ").toSet()
 }
 
 class IndexerTests {

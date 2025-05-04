@@ -9,15 +9,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private typealias SplitFunction = (String) -> List<String>
+private typealias SplitFunction = (String) -> Set<String>
 
 internal class IndexedFile(val path: Path, val split: SplitFunction) {
-  // TODO: should the index be a set instead?
-  val index: List<String> by lazy { split(path.readText()) }
+  val index: Set<String> by lazy { split(path.readText()) }
 }
 
-internal class IndexerFileWatcher(paths: Set<Path>, val split: (String) -> List<String>) :
-    FileWatcher(paths) {
+internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : FileWatcher(paths) {
   /**
    * all watched files should have an entry in the index. if the entry is `null`, it means the file
    * has not been indexed yet and it will be lazily evaluated
@@ -79,7 +77,7 @@ public abstract class Indexer {
   }
 
   /** a custom mechanism for splitting the file content into tokens */
-  public abstract fun split(fileContent: String): List<String>
+  public abstract fun split(fileContent: String): Set<String>
 
   /**
    * searches for files that contain the specified token and returns a list of files that contain
