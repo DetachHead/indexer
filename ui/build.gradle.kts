@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalComposeLibrary::class)
 
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.compose.ExperimentalComposeLibrary
 
 plugins {
@@ -40,6 +41,9 @@ compose.desktop {
   }
 }
 
-tasks.test { useJUnitPlatform() }
+tasks.test {
+  useJUnitPlatform()
+  testLogging { exceptionFormat = TestExceptionFormat.FULL }
+}
 
 kotlin { jvmToolchain(22) }

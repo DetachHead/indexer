@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
 plugins {
   alias(libs.plugins.kotlin)
   alias(libs.plugins.powerAssert)
@@ -14,7 +16,10 @@ dependencies {
   testImplementation(kotlin("test"))
 }
 
-tasks.test { useJUnitPlatform() }
+tasks.test {
+  useJUnitPlatform()
+  testLogging { exceptionFormat = TestExceptionFormat.FULL }
+}
 
 kotlin {
   jvmToolchain(22)
