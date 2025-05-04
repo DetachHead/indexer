@@ -83,7 +83,7 @@ fun WatchedPathsTree(
     modifier: Modifier = Modifier,
 ) {
   val tree =
-      Tree<okio.Path> {
+      Tree<Any /* String | Path */> {
         paths.forEach { watchedPath ->
           Branch(
               watchedPath.toString(),
@@ -104,9 +104,13 @@ fun WatchedPathsTree(
       onClick = { node ->
         tree.clearSelection()
         tree.toggleExpansion(node)
-        val path = node.content.toNioPath()
-        if (path.isRegularFile()) {
-          onOpenFile(path)
+        val value = node.content
+        // if it's not a Path then it's a top-level node representing a watched file/folder
+        if (value is okio.Path) {
+          val path = value.toNioPath()
+          if (path.isRegularFile()) {
+            onOpenFile(path)
+          }
         }
       })
 }
