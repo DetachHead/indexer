@@ -3,7 +3,6 @@ package io.github.detachhead.indexer
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.io.path.writeText
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -22,7 +21,7 @@ class IndexerTests {
     (tempDir / "asdf2").writeText("a b c")
     val indexer = TestIndexer()
     indexer.watchPath(tempDir)
-    delay(1000L) // TODO: can we avoid delay?
+    waitForFileWatcher()
     assert(indexer.searchForToken("bar") == setOf(fileWithToken))
   }
 
@@ -30,10 +29,10 @@ class IndexerTests {
   fun `indexes files created while the watcher is running`() = runBlocking {
     val indexer = TestIndexer()
     indexer.watchPath(tempDir)
-    delay(1000L) // TODO: can we avoid delay?
+    waitForFileWatcher()
     val fileWithToken = tempDir / "asdf"
     fileWithToken.writeText("foo bar baz")
-    delay(1000L)
+    waitForFileWatcher()
     assert(indexer.searchForToken("bar") == setOf(fileWithToken))
   }
 }

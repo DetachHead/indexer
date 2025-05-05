@@ -8,7 +8,6 @@ import kotlin.io.path.div
 import kotlin.io.path.relativeTo
 import kotlin.io.path.writeText
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -48,10 +47,9 @@ class FileWatcherTests {
         println("starting watcher in ${Thread.currentThread().name}")
         watch()
       }
-      // TODO: is there a better way to wait for the event than hardcoded delays?
-      delay(1000L)
+      waitForFileWatcher()
       val newFile = (tempDir / "asdf").createFile()
-      delay(1000L)
+      waitForFileWatcher()
       assert(loggedEvents.size == 1)
       assert(loggedEvents[0].path() == newFile)
     }
@@ -68,10 +66,10 @@ class FileWatcherTests {
     runWithWatcher(file1, file2) {
       launch(Dispatchers.Default) { watch() }
       // TODO: is there a better way to wait for the event than hardcoded delays?
-      delay(1000L)
+      waitForFileWatcher()
       assert(loggedEvents.isEmpty())
       files.map { it.writeText("asdf") }
-      delay(1000L)
+      waitForFileWatcher()
       assert(loggedEvents.map { it.path() } == listOf(file1, file2))
     }
   }
@@ -83,10 +81,10 @@ class FileWatcherTests {
     runWithWatcher(file) {
       launch(Dispatchers.Default) { watch() }
       // TODO: is there a better way to wait for the event than hardcoded delays?
-      delay(1000L)
+      waitForFileWatcher()
       assert(loggedEvents.isEmpty())
       file.writeText("asdf")
-      delay(1000L)
+      waitForFileWatcher()
       assert(loggedEvents.map { it.path() } == listOf(file.normalize().absolute()))
     }
   }
