@@ -86,29 +86,31 @@ public abstract class Indexer {
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Set<String>
 
-  /**
-   * searches for files that contain the specified token and returns a list of files that contain
-   * the token
-   */
-  public suspend fun searchForToken(token: String): Set<Path> = coroutineScope {
-    val indexEntryChunks =
-        watchers.flatMap { it.index }.splitInto(Runtime.getRuntime().availableProcessors())
-    val result =
-        indexEntryChunks
-            .mapIndexed { index, indexEntries ->
-              async(Dispatchers.Default) {
-                indexEntries.map { entry -> if (token in entry.index) entry.path else null }
-              }
-            }
-            .awaitAll()
-            .flatten()
-            .filterNotNull()
-            .toSet()
-    println("search complete. found '$token' in the following files: $result")
-    result
+  /** searches for files that contain the specified token */
+  public suspend fun searchForToken(token: String): Set<Path> = searchForAllTokens(setOf(token))
+
+  /** searches for files that contain all the specified tokens */
+  public suspend fun searchForAllTokens(tokens: Set<String>): Set<Path> = search {
+    tokens.all { token -> token in it.index }
   }
 
-  // TODO: insert some other search functions too eg. For searching a file that contains a specified
-  // sequence of tokens,
-  //  file that contains some of the specified tokens, etc?
+  /** searches for files that contain at least one of the specified tokens */
+  public suspend fun searchForAnyTokens(tokens: Set<String>): Set<Path> = search {
+    tokens.any { token -> token in it.index }
+  }
+
+  private suspend fun search(predicate: (IndexedFile) -> Boolean): Set<Path> = coroutineScope {
+    val indexEntryChunks =
+        watchers.flatMap { it.index }.splitInto(Runtime.getRuntime().availableProcessors())
+    indexEntryChunks
+        .mapIndexed { index, indexEntries ->
+          async(Dispatchers.Default) {
+            indexEntries.map { entry -> if (predicate(entry)) entry.path else null }
+          }
+        }
+        .awaitAll()
+        .flatten()
+        .filterNotNull()
+        .toSet()
+  }
 }
