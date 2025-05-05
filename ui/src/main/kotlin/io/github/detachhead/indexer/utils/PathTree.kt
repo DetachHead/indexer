@@ -16,5 +16,15 @@ fun pathTree(rootPath: Path, allPaths: Set<Path>): PathTree {
     val children = allPaths.filter { it.parent == rootPath }.toSet()
     return PathTree(rootPath, children.map { nested(it, allPaths) }.toSet())
   }
-  return nested(rootPath, (allPaths + allPaths.map { it.parent }).toSet())
+  return nested(rootPath, (allPaths + allPaths.flatMap { it.getParents() }).toSet())
+}
+
+private fun Path.getParents(): Set<Path> {
+  val parents = mutableSetOf<Path>()
+  var current = this.parent
+  while (current != null) {
+    parents.add(current)
+    current = current.parent
+  }
+  return parents
 }
