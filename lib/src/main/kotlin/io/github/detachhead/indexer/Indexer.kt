@@ -6,6 +6,9 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 private typealias SplitFunction = (String) -> Set<String>
@@ -39,12 +42,13 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
    * we need to do an initial index of the current state of the watched files, otherwise the index
    * will only be populated with data from files that have changed since the watcher was started
    */
-  suspend fun walkAndWatch() {
-
-    // TODO: can we avoid converting the result of walk to a set?
-    val allFiles = if (isWatchingFiles) paths else directory.fastWalk().toSet()
-    index.addAll(allFiles.map { IndexedFile(it, split) })
-    watch()
+  suspend fun walkAndWatch(scope: CoroutineScope) {
+    if (isWatchingFiles) {
+      index.addAll(paths.map { IndexedFile(it, split) })
+    } else {
+      directory.forEachFastWalk { index.add(IndexedFile(it, split)) }
+    }
+    scope.launch(Dispatchers.Default) { watch() }
   }
 }
 
@@ -58,7 +62,7 @@ public abstract class Indexer {
    *
    * @return `true` if the path was added, `false` if it was already being watched
    */
-  public fun watchPath(path: Path): Boolean {
+  public suspend fun watchPath(path: Path): Boolean {
     // if there's already a watcher watching this exact path, do nothing
     if (watchers.any { path in it.paths }) {
       return false
@@ -75,7 +79,7 @@ public abstract class Indexer {
     }
     val newWatcher = IndexerFileWatcher(setOf(path), split = ::split)
     watchers.add(newWatcher)
-    scope.launch(Dispatchers.Default) { newWatcher.walkAndWatch() }
+    newWatcher.walkAndWatch(scope)
     return true
   }
 
@@ -86,11 +90,22 @@ public abstract class Indexer {
    * searches for files that contain the specified token and returns a list of files that contain
    * the token
    */
-  public fun searchForToken(token: String): Set<Path> {
-    // TODO: multithreaded search
-    // TODO: detect duplicates across watchers?
-    val index = watchers.flatMap { it.index }
-    return index.filter { token in it.index }.map { it.path }.toSet()
+  public suspend fun searchForToken(token: String): Set<Path> = coroutineScope {
+    val indexEntryChunks =
+        watchers.flatMap { it.index }.splitInto(Runtime.getRuntime().availableProcessors())
+    val result =
+        indexEntryChunks
+            .mapIndexed { index, indexEntries ->
+              async(Dispatchers.Default) {
+                indexEntries.map { entry -> if (token in entry.index) entry.path else null }
+              }
+            }
+            .awaitAll()
+            .flatten()
+            .filterNotNull()
+            .toSet()
+    println("search complete. found '$token' in the following files: $result")
+    result
   }
 
   // TODO: insert some other search functions too eg. For searching a file that contains a specified

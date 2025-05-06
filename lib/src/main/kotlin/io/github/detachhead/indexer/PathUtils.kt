@@ -1,11 +1,11 @@
 package io.github.detachhead.indexer
 
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.walk
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -23,23 +23,22 @@ internal fun Path.fix() = normalize().absolute()
 internal fun cwd() = Path(System.getProperty("user.dir"))
 
 /** faster version of `Path.walk` */
-internal suspend fun Path.fastWalk(): Set<Path> = coroutineScope {
-  val result = ConcurrentLinkedQueue<Path>()
+internal suspend fun Path.forEachFastWalk(block: (Path) -> Unit) = coroutineScope {
   val semaphore = Semaphore(permits = 64)
 
   suspend fun walk(dir: Path) {
     semaphore.withPermit {
       for (entry in dir.listDirectoryEntries()) {
         if (entry.isDirectory()) {
+          entry.walk()
           launch { walk(entry) }
         } else {
-          result.add(entry)
+          block(entry)
         }
       }
     }
   }
 
-  walk(this@fastWalk)
+  walk(this@forEachFastWalk)
   this.coroutineContext.job.children.forEach { it.join() }
-  result.toSet()
 }

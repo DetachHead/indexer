@@ -1,6 +1,7 @@
 package io.github.detachhead.indexer
 
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentSkipListSet
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
@@ -26,17 +27,19 @@ class PathUtilsTests {
   }
 
   @Test
-  fun fastWalk() = runBlocking {
+  fun forEachFastWalk() = runBlocking {
     val files = setOf(tempDir / "foo/bar/baz", tempDir / "foo/bar/qux", tempDir / "foo/asdf")
     files.forEach {
       it.parent.createDirectories()
       it.createFile()
     }
-    assert(tempDir.fastWalk() == files)
+    val foundFiles = ConcurrentSkipListSet<Path>()
+    tempDir.forEachFastWalk { foundFiles.add(it) }
+    assert(foundFiles == files)
   }
 
   @Test
-  fun `fastWalk is faster than regular walk`() = runTest {
+  fun `forEachFastWalk is faster than regular walk`() = runTest {
     // create a ton of files so that the time difference is noticeable
     (1..10)
         .map { tempDir / it.toString() }
@@ -44,8 +47,8 @@ class PathUtilsTests {
           dir.createDirectory()
           (1..1_000).forEach { (dir / it.toString()).createFile() }
         }
-    var fastWalkResult: Set<Path>
-    val fastWalkDuration = measureTime { fastWalkResult = tempDir.fastWalk() }
+    val fastWalkResult = ConcurrentSkipListSet<Path>()
+    val fastWalkDuration = measureTime { tempDir.forEachFastWalk { fastWalkResult.add(it) } }
 
     var walkResult: Set<Path>
     val walkDuration = measureTime { walkResult = tempDir.walk().toSet() }
