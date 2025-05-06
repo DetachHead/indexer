@@ -51,7 +51,7 @@ fun App() {
   var searchText by remember { mutableStateOf("") }
   var openFileContent by remember { mutableStateOf("") }
   val coroutineScope = rememberCoroutineScope()
-  fun watchPath(file: PlatformFile?) {
+  suspend fun watchPath(file: PlatformFile?) {
     if (file == null) return
     val path = Path(file.path)
     watchedPaths.add(path)
@@ -73,7 +73,7 @@ fun App() {
                   onQueryChange = { searchText = it },
                   onSearch = {
                     // TODO: better search
-                    filteredPaths = indexer.searchForToken(it)
+                    coroutineScope.launch { filteredPaths = indexer.searchForToken(it) }
                   })
               IconButton(
                   onClick = {
