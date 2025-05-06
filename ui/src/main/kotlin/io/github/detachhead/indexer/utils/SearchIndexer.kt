@@ -1,5 +1,6 @@
 package io.github.detachhead.indexer.utils
 
+import io.github.detachhead.indexer.Token
 import io.github.detachhead.indexer.WhitespaceIndexer
 
 private fun isBinaryContent(content: String): Boolean {
@@ -12,9 +13,9 @@ private fun isBinaryContent(content: String): Boolean {
 }
 
 class SearchIndexer : WhitespaceIndexer() {
-  override fun split(fileContent: String): Set<String> =
+  override fun split(fileContent: String): List<Token> =
       if (isBinaryContent(fileContent)) {
-        emptySet()
+        emptyList()
       } else {
         super.split(fileContent)
       }

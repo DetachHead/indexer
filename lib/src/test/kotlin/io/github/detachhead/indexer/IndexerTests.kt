@@ -23,7 +23,7 @@ internal class IndexerTests {
     val indexer = WhitespaceIndexer()
     indexer.watchPath(tempDir)
     waitForFileWatcher()
-    assert(indexer.searchForToken("bar") == setOf(fileWithToken))
+    assert(indexer.searchForToken("bar") == mapOf(fileWithToken to listOf(4)))
   }
 
   @Test
@@ -34,7 +34,7 @@ internal class IndexerTests {
     val fileWithToken = tempDir / "asdf"
     fileWithToken.writeText("foo bar baz")
     waitForFileWatcher()
-    assert(indexer.searchForToken("bar") == setOf(fileWithToken))
+    assert(indexer.searchForToken("bar") == mapOf(fileWithToken to listOf(4)))
   }
 
   @Nested
@@ -57,14 +57,18 @@ internal class IndexerTests {
 
     @Test
     fun searchForAllTokens() = runTest {
-      assert(indexer.searchForAllTokens(setOf("bar", "asdf")) == emptySet<Path>())
-      assert(indexer.searchForAllTokens(setOf("bar", "baz")) == setOf(fileWithToken))
+      assert(indexer.searchForAllTokens(setOf("bar", "asdf")) == emptyMap<Path, List<Token>>())
+      assert(
+          indexer.searchForAllTokens(setOf("bar", "baz")) ==
+              mapOf(fileWithToken to listOf(Token("bar", 4), Token("baz", 8))))
     }
 
     @Test
     fun searchForAnyTokens() = runTest {
-      assert(indexer.searchForAnyTokens(setOf("bar", "asdf")) == setOf(fileWithToken))
-      assert(indexer.searchForAllTokens(setOf("asdf", "fdsa")) == emptySet<Path>())
+      assert(
+          indexer.searchForAnyTokens(setOf("bar", "asdf")) ==
+              mapOf(fileWithToken to listOf(Token("bar", 4))))
+      assert(indexer.searchForAllTokens(setOf("asdf", "fdsa")) == emptyMap<Path, List<Token>>())
     }
   }
 }
