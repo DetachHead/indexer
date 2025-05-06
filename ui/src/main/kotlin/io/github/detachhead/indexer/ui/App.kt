@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.SkipNext
+import androidx.compose.material.icons.outlined.SkipPrevious
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,8 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
+import io.github.detachhead.indexer.SearchResults
 import io.github.detachhead.indexer.utils.SearchIndexer
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
@@ -47,10 +53,16 @@ private val indexer = SearchIndexer()
 @Composable
 fun App() {
   val watchedPaths = remember { mutableStateListOf<Path>() }
-  var filteredPaths by remember { mutableStateOf<Set<Path>?>(null) }
+  var searchResults by remember { mutableStateOf<SearchResults?>(null) }
   var searchText by remember { mutableStateOf("") }
+  var openFile by remember { mutableStateOf<Path?>(null) }
   var openFileContent by remember { mutableStateOf("") }
+  var highlightedTokenIndex by remember { mutableStateOf(-1) }
+
   val coroutineScope = rememberCoroutineScope()
+  val searchTokens = searchText.split(" ").toSet()
+  val tokensForCurrentFile = searchResults?.get(openFile)
+
   suspend fun watchPath(file: PlatformFile?) {
     if (file == null) return
     val path = Path(file.path)
@@ -72,8 +84,9 @@ fun App() {
                   searchText,
                   onQueryChange = { searchText = it },
                   onSearch = {
-                    // TODO: better search
-                    coroutineScope.launch { filteredPaths = indexer.searchForToken(it) }
+                    coroutineScope.launch {
+                      searchResults = indexer.searchForAllTokens(searchTokens)
+                    }
                   })
               IconButton(
                   onClick = {
@@ -95,22 +108,58 @@ fun App() {
                   }
             })
       },
-  ) { innerPadding ->
-    Column(
-        modifier = Modifier.padding(innerPadding),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-      Row(modifier = Modifier.fillMaxWidth()) {
-        WatchedPathsTree(
-            paths = watchedPaths,
-            onlyIncludePaths = filteredPaths,
-            onOpenFile = { openFileContent = it.readText() },
-            modifier = Modifier.weight(1f))
-        FileContents(
-            content = openFileContent,
-            searchText = searchText,
-            modifier = Modifier.weight(2.25f).fillMaxHeight())
+      bottomBar = {
+        BottomAppBar(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.primary,
+        ) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.End,
+              verticalAlignment = Alignment.CenterVertically) {
+                if (highlightedTokenIndex > -1) {
+                  val matchCount = tokensForCurrentFile?.count()
+                  if (matchCount != null) {
+                    Text(
+                        text = "${highlightedTokenIndex + 1} of $matchCount results",
+                    )
+                    IconButton(
+                        onClick = { highlightedTokenIndex-- },
+                        enabled = highlightedTokenIndex > 0) {
+                          Icon(Icons.Outlined.SkipPrevious, "Previous occurrence")
+                        }
+                    IconButton(
+                        onClick = { highlightedTokenIndex++ },
+                        enabled = highlightedTokenIndex < tokensForCurrentFile.count() - 1) {
+                          Icon(Icons.Outlined.SkipNext, "Next occurrence")
+                        }
+                  }
+                }
+              }
+        }
+      }) { innerPadding ->
+        Column(
+            modifier = Modifier.padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+          Row(modifier = Modifier.fillMaxWidth()) {
+            WatchedPathsTree(
+                paths = watchedPaths,
+                onlyIncludePaths = searchResults?.keys,
+                onOpenFile = {
+                  openFile = it
+                  openFileContent = it.readText()
+                  highlightedTokenIndex = 0
+                },
+                modifier = Modifier.weight(1f))
+            FileContents(
+                content = openFileContent,
+                selection =
+                    tokensForCurrentFile?.get(highlightedTokenIndex)?.let {
+                      TextRange(it.range.first, it.range.last)
+                    },
+                modifier = Modifier.weight(2.25f).fillMaxHeight())
+          }
+        }
       }
-    }
-  }
 }
