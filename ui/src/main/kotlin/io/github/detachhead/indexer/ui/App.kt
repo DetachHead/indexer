@@ -162,14 +162,14 @@ fun App() {
                 if (highlightedTokenIndex > -1) {
                   val matchCount = tokensForCurrentFile?.count()
                   if (matchCount != null) {
-                    Text(
-                        text = "${highlightedTokenIndex + 1} of $matchCount results",
-                    )
                     IconButton(
                         onClick = { highlightedTokenIndex-- },
                         enabled = highlightedTokenIndex > 0) {
                           Icon(Icons.Outlined.SkipPrevious, "Previous occurrence")
                         }
+                    Text(
+                        text = "${highlightedTokenIndex + 1} of $matchCount",
+                    )
                     IconButton(
                         onClick = { highlightedTokenIndex++ },
                         enabled = highlightedTokenIndex < tokensForCurrentFile.count() - 1) {
