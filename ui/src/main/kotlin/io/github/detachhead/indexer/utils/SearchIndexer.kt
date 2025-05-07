@@ -2,6 +2,7 @@ package io.github.detachhead.indexer.utils
 
 import io.github.detachhead.indexer.Token
 import io.github.detachhead.indexer.WhitespaceIndexer
+import io.methvin.watcher.DirectoryChangeEvent
 
 private fun isBinaryContent(content: String): Boolean {
   for (char in content) {
@@ -12,11 +13,16 @@ private fun isBinaryContent(content: String): Boolean {
   return false
 }
 
-class SearchIndexer : WhitespaceIndexer() {
+class SearchIndexer(private val onChangeFunction: SearchIndexer.(DirectoryChangeEvent) -> Unit) :
+    WhitespaceIndexer() {
   override fun split(fileContent: String): List<Token> =
       if (isBinaryContent(fileContent)) {
         emptyList()
       } else {
         super.split(fileContent)
       }
+
+  override fun onChange(event: DirectoryChangeEvent) {
+    onChangeFunction(event)
+  }
 }

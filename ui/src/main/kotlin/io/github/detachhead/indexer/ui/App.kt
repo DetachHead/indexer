@@ -39,6 +39,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.path
+import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.readText
@@ -46,12 +47,11 @@ import kotlinx.coroutines.launch
 
 // TODO: ui unit tests
 
-// TODO: update tree view when changes are made to the files on disk
-private val indexer = SearchIndexer()
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
+  val coroutineScope = rememberCoroutineScope()
+
   val watchedPaths = remember { mutableStateListOf<Path>() }
   var searchResults by remember { mutableStateOf<SearchResults?>(null) }
   var searchText by remember { mutableStateOf("") }
@@ -60,8 +60,51 @@ fun App() {
   var highlightedTokenIndex by remember { mutableStateOf(-1) }
   var allFiles by remember { mutableStateOf(emptySet<Path>()) }
 
-  val coroutineScope = rememberCoroutineScope()
-  val searchTokens = searchText.split(" ").toSet()
+  fun closeFile() {
+    openFile = null
+    openFileContent = ""
+    highlightedTokenIndex = -1
+  }
+
+  suspend fun search(indexer: SearchIndexer) {
+    val result = indexer.searchForAllTokens(searchText.split(" ").filter { it != "" }.toSet())
+    if (openFile !in result) {
+      closeFile()
+    }
+    searchResults = result
+  }
+
+  val indexer = remember {
+    SearchIndexer {
+      val path = it.path()
+      when (it.eventType()) {
+        DirectoryChangeEvent.EventType.CREATE -> {
+          allFiles = allFiles + path
+          coroutineScope.launch { search(this@SearchIndexer) }
+        }
+        DirectoryChangeEvent.EventType.MODIFY -> {
+          coroutineScope.launch {
+            search(this@SearchIndexer)
+            if (openFile == path && searchResults?.contains(path) == true) {
+              openFileContent = path.readText()
+              // we go back to the first search result in the file in case tokens were
+              // rearranged/deleted
+              highlightedTokenIndex = 0
+            }
+          }
+        }
+        DirectoryChangeEvent.EventType.DELETE -> {
+          if (openFile == path) {
+            closeFile()
+          }
+          allFiles = allFiles - path
+        }
+        DirectoryChangeEvent.EventType.OVERFLOW -> {
+          TODO("what is overflow?")
+        }
+      }
+    }
+  }
   val tokensForCurrentFile = searchResults?.get(openFile)
 
   suspend fun watchPath(file: PlatformFile?) {
@@ -72,6 +115,7 @@ fun App() {
     indexer.watchPath(path)
     allFiles = indexer.allFiles()
   }
+
   Scaffold(
       topBar = {
         TopAppBar(
@@ -85,11 +129,7 @@ fun App() {
               SearchBar(
                   searchText,
                   onQueryChange = { searchText = it },
-                  onSearch = {
-                    coroutineScope.launch {
-                      searchResults = indexer.searchForAllTokens(searchTokens)
-                    }
-                  })
+                  onSearch = { coroutineScope.launch { search(indexer) } })
               IconButton(
                   onClick = {
                     coroutineScope.launch {
@@ -157,7 +197,7 @@ fun App() {
             FileContents(
                 content = openFileContent,
                 selection =
-                    tokensForCurrentFile?.get(highlightedTokenIndex)?.let {
+                    tokensForCurrentFile?.getOrNull(highlightedTokenIndex)?.let {
                       TextRange(it.range.first, it.range.last)
                     },
                 modifier = Modifier.weight(2.25f).fillMaxHeight())
