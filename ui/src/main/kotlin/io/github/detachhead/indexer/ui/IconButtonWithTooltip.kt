@@ -17,6 +17,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
+/**
+ * wrapper for [IconButton] that enforces that a tooltip is displayed when the button is disabled,
+ * to ensure the user is never confused as to why the button is disabled
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IconButtonWithTooltip(
@@ -24,14 +28,14 @@ fun IconButtonWithTooltip(
     icon: ImageVector,
     tooltip: String,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
+    disabledReason: String? = null,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource? = null,
 ) {
   TooltipArea(
       tooltip = {
         Surface(modifier = Modifier.shadow(4.dp), shape = RoundedCornerShape(4.dp)) {
-          Text(text = tooltip, modifier = Modifier.padding(10.dp))
+          Text(text = disabledReason ?: tooltip, modifier = Modifier.padding(10.dp))
         }
       },
       delayMillis = 600,
@@ -39,7 +43,7 @@ fun IconButtonWithTooltip(
     IconButton(
         onClick = onClick,
         modifier = modifier,
-        enabled = enabled,
+        enabled = disabledReason == null,
         colors = colors,
         interactionSource = interactionSource) {
           Icon(icon, tooltip)
