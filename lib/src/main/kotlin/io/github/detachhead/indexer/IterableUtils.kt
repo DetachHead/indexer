@@ -14,10 +14,10 @@ internal fun <T, U> Iterable<T>.allMatch(predicate: (T) -> U): Boolean {
   return true
 }
 
-internal fun <T> List<T>.splitInto(n: Int): List<List<T>> {
+internal fun <K, V> Map<K, V>.splitInto(n: Int): List<Map<K, V>> {
   if (isEmpty()) {
-    return List(n) { emptyList() } // Return n empty lists if the original is empty
+    return List(n) { emptyMap() }
   }
-  val groups = this.withIndex().groupBy { it.index % n }
-  return List(n) { i -> groups[i]?.map { it.value } ?: emptyList() }
+  val groups = this.toList().withIndex().groupBy { it.index % n }
+  return List(n) { i -> groups[i]?.associate { it.value } ?: emptyMap() }
 }

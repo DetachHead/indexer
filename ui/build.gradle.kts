@@ -34,7 +34,6 @@ compose.desktop {
   application {
     mainClass = "io.gitlab.detachhead.indexer.ui.MainKt"
     nativeDistributions {
-      // TODO: targetPlatforms?
       packageName = "indexer"
       packageVersion = "1.0.0"
     }

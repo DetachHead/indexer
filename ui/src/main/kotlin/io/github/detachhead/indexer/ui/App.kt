@@ -58,6 +58,7 @@ fun App() {
   var openFile by remember { mutableStateOf<Path?>(null) }
   var openFileContent by remember { mutableStateOf("") }
   var highlightedTokenIndex by remember { mutableStateOf(-1) }
+  var allFiles by remember { mutableStateOf(emptySet<Path>()) }
 
   val coroutineScope = rememberCoroutineScope()
   val searchTokens = searchText.split(" ").toSet()
@@ -69,6 +70,7 @@ fun App() {
     watchedPaths.add(path)
     searchText = ""
     indexer.watchPath(path)
+    allFiles = indexer.allFiles()
   }
   Scaffold(
       topBar = {
@@ -144,8 +146,8 @@ fun App() {
         ) {
           Row(modifier = Modifier.fillMaxWidth()) {
             WatchedPathsTree(
-                paths = watchedPaths,
-                onlyIncludePaths = searchResults?.keys,
+                watchedPaths = watchedPaths,
+                allPaths = searchResults?.keys ?: allFiles,
                 onOpenFile = {
                   openFile = it
                   openFileContent = it.readText()
