@@ -28,8 +28,6 @@ private typealias SplitFunction = (String) -> Tokens
 private typealias Tokens = Map<String, Set<Int>>
 
 internal class IndexedFile(val path: Path, val split: SplitFunction) {
-  // TODO: this fills up the RAM with the contents of all files in the directory when searching,
-  //  which crashes on large directories
   val index: Tokens by lazy { split(path.readText()) }
 
   operator fun contains(token: String) = token in index
