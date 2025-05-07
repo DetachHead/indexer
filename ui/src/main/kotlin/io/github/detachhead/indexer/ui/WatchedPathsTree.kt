@@ -77,24 +77,18 @@ private fun TreeScope.FilteredPathsTree(trees: List<PathTree>) {
 
 @Composable
 fun WatchedPathsTree(
-    paths: List<Path>,
-    onlyIncludePaths: Set<Path>?,
+    watchedPaths: List<Path>,
+    allPaths: Set<Path>,
     onOpenFile: (Path) -> Unit,
     modifier: Modifier = Modifier,
 ) {
   val tree =
       Tree<Any /* String | Path */> {
-        paths.forEach { watchedPath ->
+        watchedPaths.forEach { watchedPath ->
           Branch(
               watchedPath.toString(),
               customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") }) {
-                if (onlyIncludePaths == null) {
-                  FileSystemTree(
-                      rootPath = watchedPath.toOkioPath(),
-                  )
-                } else {
-                  FilteredPathsTree(pathTree(watchedPath, onlyIncludePaths).children.toList())
-                }
+                FilteredPathsTree(pathTree(watchedPath, allPaths).children.toList())
               }
         }
       }

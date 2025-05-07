@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  */
 public typealias SearchResults = Map<Path, List<Token>>
 
-private typealias SplitFunction = (String) -> Tokens
+private typealias SplitFunction = (Path) -> Tokens
 
 /**
  * the abstract [Indexer.split] function returns an [Iterable] of [Token]s. while that's easier for
@@ -27,18 +27,12 @@ private typealias SplitFunction = (String) -> Tokens
  */
 private typealias Tokens = Map<String, Set<Int>>
 
-internal class IndexedFile(val path: Path, val split: SplitFunction) {
-  val index: Tokens by lazy { split(path.readText()) }
-
-  operator fun contains(token: String) = token in index
-}
-
 internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : FileWatcher(paths) {
   /**
    * all watched files should have an entry in the index. if the entry is `null`, it means the file
    * has not been indexed yet and it will be lazily evaluated
    */
-  val index = mutableSetOf<IndexedFile>()
+  val index = mutableMapOf<Path, Tokens>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
     val path = event?.path()
@@ -46,8 +40,8 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
 
     when (event.eventType()) {
       DirectoryChangeEvent.EventType.CREATE,
-      DirectoryChangeEvent.EventType.MODIFY -> index.add(IndexedFile(path, split))
-      DirectoryChangeEvent.EventType.DELETE -> index.removeIf { it.path == path }
+      DirectoryChangeEvent.EventType.MODIFY -> index[path] = split(path)
+      DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
       DirectoryChangeEvent.EventType.OVERFLOW -> TODO("what causes overflow?")
     }
   }
@@ -58,9 +52,9 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
    */
   suspend fun walkAndWatch(scope: CoroutineScope) {
     if (isWatchingFiles) {
-      index.addAll(paths.map { IndexedFile(it, split) })
+      paths.forEach { index[it] = split(it) }
     } else {
-      directory.forEachFastWalk { index.add(IndexedFile(it, split)) }
+      directory.forEachFastWalk { index[it] = split(it) }
     }
     scope.launch(Dispatchers.Default) { watch() }
   }
@@ -97,11 +91,14 @@ public abstract class Indexer {
     return true
   }
 
+  /** all files found by the indexer */
+  public fun allFiles(): Set<Path> = watchers.flatMap { it.index.keys }.toSet()
+
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>
 
-  private fun splitToMap(fileContent: String): Tokens =
-      split(fileContent).groupBy({ it.value }) { it.position }.mapValues { it.value.toSet() }
+  private fun splitToMap(path: Path): Tokens =
+      split(path.readText()).groupBy({ it.value }) { it.position }.mapValues { it.value.toSet() }
 
   /**
    * searches for files that contain the specified token
@@ -128,15 +125,18 @@ public abstract class Indexer {
       filterFunction: Iterable<String>.(((String) -> Boolean)) -> Boolean
   ): SearchResults = coroutineScope {
     val indexEntryChunks =
-        watchers.flatMap { it.index }.splitInto(Runtime.getRuntime().availableProcessors())
+        watchers
+            .flatMap { it.index.toList() }
+            .toMap()
+            .splitInto(Runtime.getRuntime().availableProcessors())
     // TODO: this is pretty wacky, can it be simplified at all?
     indexEntryChunks
         .mapIndexed { index, indexEntries ->
           async(Dispatchers.Default) {
             indexEntries.mapNotNull { entry ->
-              if (tokens.filterFunction { token -> token in entry }) {
-                entry.path to
-                    entry.index.entries
+              if (tokens.filterFunction { token -> token in entry.value }) {
+                entry.key to
+                    entry.value.entries
                         // filter out tokens that weren't in the search query
                         .filter { it.key in tokens }
                         .flatMap { entry -> entry.value.map { Token(entry.key, it) } }
