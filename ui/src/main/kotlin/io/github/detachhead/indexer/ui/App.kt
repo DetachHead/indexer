@@ -9,12 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.SkipNext
-import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,7 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
@@ -155,29 +150,12 @@ fun App() {
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.primary,
         ) {
-          Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.End,
-              verticalAlignment = Alignment.CenterVertically) {
-                if (highlightedTokenIndex > -1) {
-                  val matchCount = tokensForCurrentFile?.count()
-                  if (matchCount != null) {
-                    IconButton(
-                        onClick = { highlightedTokenIndex-- },
-                        enabled = highlightedTokenIndex > 0) {
-                          Icon(Icons.Outlined.SkipPrevious, "Previous occurrence")
-                        }
-                    Text(
-                        text = "${highlightedTokenIndex + 1} of $matchCount",
-                    )
-                    IconButton(
-                        onClick = { highlightedTokenIndex++ },
-                        enabled = highlightedTokenIndex < tokensForCurrentFile.count() - 1) {
-                          Icon(Icons.Outlined.SkipNext, "Next occurrence")
-                        }
-                  }
-                }
-              }
+          if (tokensForCurrentFile != null) {
+            TokenHighlightControls(
+                matchCount = tokensForCurrentFile.count(),
+                highlightedIndex = highlightedTokenIndex,
+                onChange = { highlightedTokenIndex = it })
+          }
         }
       }) { innerPadding ->
         Column(
