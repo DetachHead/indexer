@@ -33,7 +33,6 @@ internal abstract class FileWatcher(paths: Set<Path>) {
   val isWatchingFiles: Boolean
 
   init {
-    // TODO: this stuff seems wack
     val firstPath = this.paths.iterator().next()
     isWatchingFiles =
         if (this.paths.count() == 1) {
