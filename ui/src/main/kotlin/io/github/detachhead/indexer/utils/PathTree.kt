@@ -2,7 +2,9 @@ package io.github.detachhead.indexer.utils
 
 import java.nio.file.Path
 
-data class PathTree(val path: Path, val children: Set<PathTree>)
+data class PathTree(val path: Path, private val getChildren: () -> Set<PathTree>) {
+  val children by lazy { getChildren() }
+}
 
 /**
  * a directory tree structure that does not look at the files on disk to construct the structure.
@@ -14,7 +16,7 @@ fun pathTree(rootPath: Path, allPaths: Set<Path>): PathTree {
 
   fun nested(rootPath: Path, allPaths: Set<Path>): PathTree {
     val children = allPaths.filter { it.parent == rootPath }.toSet()
-    return PathTree(rootPath, children.map { nested(it, allPaths) }.toSet())
+    return PathTree(rootPath) { children.map { nested(it, allPaths) }.toSet() }
   }
   return nested(rootPath, (allPaths + allPaths.flatMap { it.getParents() }).toSet())
 }

@@ -23,10 +23,7 @@ import java.nio.file.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
-import okio.FileSystem
 import okio.Path.Companion.toOkioPath
-
-private val fileSystem = FileSystem.SYSTEM
 
 @Composable
 private fun TreeScope.Folder(path: okio.Path, children: @Composable TreeScope.() -> Unit = {}) {
@@ -44,20 +41,6 @@ private fun TreeScope.File(path: okio.Path) {
       name = path.name,
       customIcon = { Icon(Icons.AutoMirrored.Outlined.InsertDriveFile, "File") },
   )
-}
-
-@Composable
-private fun TreeScope.FileSystemTree(rootPath: okio.Path) {
-  fileSystem.listOrNull(rootPath)?.forEach { path -> FileSystemNode(path) }
-}
-
-@Composable
-private fun TreeScope.FileSystemNode(path: okio.Path) {
-  if (fileSystem.metadata(path).isDirectory) {
-    Folder(path) { FileSystemTree(path) }
-  } else {
-    File(path)
-  }
 }
 
 @Composable
