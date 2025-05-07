@@ -17,8 +17,6 @@ import kotlinx.coroutines.launch
  */
 public typealias SearchResults = Map<Path, List<Token>>
 
-private typealias SplitFunction = (Path) -> Tokens
-
 /**
  * the abstract [Indexer.split] function returns an [Iterable] of [Token]s. while that's easier for
  * users, it's not very space-efficient. since we're storing the index in memory, we convert the
@@ -27,7 +25,7 @@ private typealias SplitFunction = (Path) -> Tokens
  */
 private typealias Tokens = Map<String, Set<Int>>
 
-internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : FileWatcher(paths) {
+internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : FileWatcher(paths) {
   /**
    * all watched files should have an entry in the index. if the entry is `null`, it means the file
    * has not been indexed yet and it will be lazily evaluated
@@ -37,13 +35,13 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
   override fun onChange(event: DirectoryChangeEvent?) {
     val path = event?.path()
     if (path == null) TODO("when is the event null?")
-
     when (event.eventType()) {
       DirectoryChangeEvent.EventType.CREATE,
-      DirectoryChangeEvent.EventType.MODIFY -> index[path] = split(path)
+      DirectoryChangeEvent.EventType.MODIFY -> index[path] = indexer.splitToMap(path)
       DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
       DirectoryChangeEvent.EventType.OVERFLOW -> TODO("what causes overflow?")
     }
+    indexer.onChange(event)
   }
 
   /**
@@ -52,9 +50,9 @@ internal class IndexerFileWatcher(paths: Set<Path>, val split: SplitFunction) : 
    */
   suspend fun walkAndWatch(scope: CoroutineScope) {
     if (isWatchingFiles) {
-      paths.forEach { index[it] = split(it) }
+      paths.forEach { index[it] = indexer.splitToMap(it) }
     } else {
-      directory.forEachFastWalk { index[it] = split(it) }
+      directory.forEachFastWalk { index[it] = indexer.splitToMap(it) }
     }
     scope.launch(Dispatchers.Default) { watch() }
   }
@@ -85,7 +83,7 @@ public abstract class Indexer {
         return true
       }
     }
-    val newWatcher = IndexerFileWatcher(setOf(path), split = ::splitToMap)
+    val newWatcher = IndexerFileWatcher(setOf(path), indexer = this)
     watchers.add(newWatcher)
     newWatcher.walkAndWatch(scope)
     return true
@@ -94,10 +92,16 @@ public abstract class Indexer {
   /** all files found by the indexer */
   public fun allFiles(): Set<Path> = watchers.flatMap { it.index.keys }.toSet()
 
+  /**
+   * any actions to be performed when a file is added, removed or modified, in addition to updating
+   * the index. this method will always be called *after* the index has been updated
+   */
+  public open fun onChange(event: DirectoryChangeEvent) {}
+
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>
 
-  private fun splitToMap(path: Path): Tokens =
+  internal fun splitToMap(path: Path): Tokens =
       split(path.readText()).groupBy({ it.value }) { it.position }.mapValues { it.value.toSet() }
 
   /**

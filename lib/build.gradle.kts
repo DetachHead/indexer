@@ -10,7 +10,7 @@ plugins {
 repositories { mavenCentral() }
 
 dependencies {
-  implementation(libs.directoryWatcher)
+  api(libs.directoryWatcher)
   implementation(libs.coroutines)
   testImplementation(libs.coroutinesTest)
   testImplementation(kotlin("test"))
