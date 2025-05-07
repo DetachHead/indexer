@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -29,17 +28,12 @@ fun IconButtonWithTooltip(
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource? = null,
 ) {
-
   TooltipArea(
       tooltip = {
-        Surface(
-            modifier = Modifier.shadow(4.dp),
-            color = Color(255, 255, 210),
-            shape = RoundedCornerShape(4.dp)) {
-              Text(text = tooltip, modifier = Modifier.padding(10.dp))
-            }
+        Surface(modifier = Modifier.shadow(4.dp), shape = RoundedCornerShape(4.dp)) {
+          Text(text = tooltip, modifier = Modifier.padding(10.dp))
+        }
       },
-      //      modifier = Modifier.padding(start = 40.dp),
       delayMillis = 600,
   ) {
     IconButton(
