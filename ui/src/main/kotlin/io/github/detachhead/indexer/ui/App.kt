@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FileCopy
+import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
@@ -130,24 +130,24 @@ fun App() {
                   searchText,
                   onQueryChange = { searchText = it },
                   onSearch = { coroutineScope.launch { search(indexer) } })
-              IconButton(
+              IconButtonWithTooltip(
+                  icon = Icons.Outlined.Folder,
+                  tooltip = "Watch folder",
                   onClick = {
                     coroutineScope.launch {
                       val directory = FileKit.openDirectoryPicker()
                       watchPath(directory)
                     }
-                  }) {
-                    Icon(Icons.Outlined.Folder, "Watch folder")
-                  }
-              IconButton(
+                  })
+              IconButtonWithTooltip(
+                  icon = Icons.AutoMirrored.Outlined.InsertDriveFile,
+                  tooltip = "Watch file",
                   onClick = {
                     coroutineScope.launch {
                       val files = FileKit.openFilePicker(mode = FileKitMode.Multiple())
                       files?.forEach { watchPath(it) }
                     }
-                  }) {
-                    Icon(Icons.Outlined.FileCopy, "Watch file")
-                  }
+                  })
             })
       },
       bottomBar = {
