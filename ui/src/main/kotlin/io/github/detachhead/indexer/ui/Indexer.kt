@@ -22,6 +22,7 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,7 +55,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   var openFile by remember { mutableStateOf<Path?>(null) }
   var openFileContent by remember { mutableStateOf("") }
   var highlightedTokenIndex by remember { mutableStateOf(-1) }
-  var allFiles by remember { mutableStateOf(emptySet<Path>()) }
+  val allFiles = remember { mutableStateListOf<Path>() }
   var searchText by remember { mutableStateOf("") }
 
   fun closeFile() {
@@ -82,13 +83,13 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
       val path = it.path()
       when (it.eventType()) {
         DirectoryChangeEvent.EventType.CREATE -> {
-          allFiles = allFiles + path
+          allFiles.add(path)
           coroutineScope.launch { search(this@SearchIndexer) }
         }
         DirectoryChangeEvent.EventType.MODIFY -> {
           coroutineScope.launch {
             search(this@SearchIndexer)
-            if (openFile == path && searchResults?.contains(path) == true) {
+            if (openFile == path && searchResults?.contains(path) != false) {
               openFileContent = path.readText()
               // we go back to the first search result in the file in case tokens were
               // rearranged/deleted
@@ -100,7 +101,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
           if (openFile == path) {
             closeFile()
           }
-          allFiles = allFiles - path
+          allFiles.remove(path)
           coroutineScope.launch { search(this@SearchIndexer) }
         }
         DirectoryChangeEvent.EventType.OVERFLOW -> {
@@ -115,7 +116,10 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
     if (paths.isEmpty()) return
     loadingText = "Indexing"
     paths.forEach { indexer.watchPath(it) }
-    allFiles = indexer.allFiles()
+    allFiles.apply {
+      clear()
+      addAll(indexer.allFiles())
+    }
     loadingText = null
   }
 
@@ -210,7 +214,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
           Row(modifier = Modifier.fillMaxWidth()) {
             WatchedPathsTree(
                 watchedPaths = watchedPaths,
-                allPaths = searchResults?.keys ?: allFiles,
+                allPaths = searchResults?.keys ?: allFiles.toSet(),
                 onOpenFile = {
                   openFile = it
                   openFileContent = it.readText()
