@@ -42,7 +42,7 @@ This repo contains a demo app using the library written in Kotlin Compose.
 
 Note:
 
-- the search box in this demo app uses the `searchForAnyTokens` method (see [examples above](#example))
+- the search box in this demo app uses the `searchForAnyTokens` method (see [examples above](#example)), splitting the contents of the search field by whitespace
 - this demo app does not include binary files in the search
 
 ![](demo-app.png)
