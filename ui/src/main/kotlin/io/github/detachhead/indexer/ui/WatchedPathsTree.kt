@@ -66,13 +66,21 @@ fun WatchedPathsTree(
     modifier: Modifier = Modifier,
 ) {
   val tree =
-      Tree<Any /* String | Path */> {
+      Tree<okio.Path> {
         watchedPaths.forEach { watchedPath ->
-          Branch(
-              watchedPath.toString(),
-              customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") }) {
-                FilteredPathsTree(pathTree(watchedPath, allPaths).children.toList())
-              }
+          val okioPath = watchedPath.toOkioPath()
+          if (watchedPath.isRegularFile()) {
+            Leaf(
+                okioPath,
+                customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") },
+            )
+          } else {
+            Branch(
+                okioPath,
+                customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched folder") }) {
+                  FilteredPathsTree(pathTree(watchedPath, allPaths).children.toList())
+                }
+          }
         }
       }
   Bonsai(
@@ -82,12 +90,9 @@ fun WatchedPathsTree(
         tree.clearSelection()
         tree.toggleExpansion(node)
         val value = node.content
-        // if it's not a Path then it's a top-level node representing a watched file/folder
-        if (value is okio.Path) {
-          val path = value.toNioPath()
-          if (path.isRegularFile()) {
-            onOpenFile(path)
-          }
+        val path = value.toNioPath()
+        if (path.isRegularFile()) {
+          onOpenFile(path)
         }
       })
 }
