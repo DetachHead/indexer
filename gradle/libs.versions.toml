@@ -7,6 +7,7 @@ detekt = "1.23.8"
 directoryWatcher = "0.19.0"
 bonsai = "1.2.0"
 filekit = "0.10.0-beta02"
+dokka = "2.0.0"
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -15,6 +16,7 @@ composePlugin = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kot
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [libraries]
 coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
