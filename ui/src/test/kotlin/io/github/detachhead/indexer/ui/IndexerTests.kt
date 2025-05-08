@@ -1,0 +1,70 @@
+package io.github.detachhead.indexer.ui
+
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.runComposeUiTest
+import java.nio.file.Path
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.div
+import kotlin.io.path.relativeTo
+import kotlin.io.path.writeText
+import kotlin.test.Test
+import org.junit.jupiter.api.io.TempDir
+
+@OptIn(ExperimentalTestApi::class)
+class IndexerTests {
+  @TempDir lateinit var tempDir: Path
+
+  fun ComposeUiTest.openFile(watchedPath: Path, file: Path) {
+    // expand the root node with the watched path
+    onNodeWithText(watchedPath.toString()).performClick()
+    // traverse the tree, expanding each node until we get to the file
+    file.relativeTo(watchedPath).forEach { onNodeWithText(it.toString()).performClick() }
+  }
+
+  fun ComposeUiTest.setupWithTestFile(fileContent: String): Path {
+    val file = tempDir / "asdf"
+    val fileContent = fileContent
+    file.writeText(fileContent)
+    setContent {
+      val watchedPaths = remember { mutableStateListOf(tempDir) }
+      Indexer(watchedPaths, onAddWatchedPaths = { watchedPaths.addAll(it) })
+    }
+    return file
+  }
+
+  @Test
+  fun `open file`() = runComposeUiTest {
+    val fileContent = "foo bar baz"
+    val file = setupWithTestFile(fileContent)
+    openFile(tempDir, file)
+    onNodeWithTag("fileContents").assertTextEquals(fileContent)
+  }
+
+  @Test
+  fun search() = runComposeUiTest {
+    val fileContent = "foo bar baz"
+    val file = setupWithTestFile(fileContent)
+    onNodeWithText("Search for words").performTextInput(fileContent)
+    openFile(tempDir, file)
+    onNodeWithText("1 of 3").assertExists()
+  }
+
+  @Test
+  fun `ui updates when watched directory changes`() = runComposeUiTest {
+    val fileContent = "foo bar baz"
+    val file = setupWithTestFile(fileContent)
+    openFile(tempDir, file)
+    file.deleteExisting()
+    // if the file content is empty that means the file is no longer open because it was removed
+    // from the tree
+    onNodeWithTag("fileContents").assertTextEquals("")
+  }
+}
