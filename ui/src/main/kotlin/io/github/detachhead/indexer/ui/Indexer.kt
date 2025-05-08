@@ -38,6 +38,10 @@ import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.path
 import io.methvin.watcher.DirectoryChangeEvent
+import java.awt.Desktop
+import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.readText
@@ -130,6 +134,17 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
                 ),
             title = { Text("Indexer") },
             actions = {
+              IconButtonWithTooltip(
+                  icon = sparkle,
+                  tooltip = "Try the New Search Experience, powered by AI!",
+                  onClick = {
+                    val urlEncodedSearchText =
+                        URLEncoder.encode(searchText, StandardCharsets.UTF_8.toString())
+                    Desktop.getDesktop()
+                        .browse(
+                            URI(
+                                "https://chat.openai.com/?model=gpt-4&prompt=$urlEncodedSearchText"))
+                  })
               SearchBar(
                   searchText,
                   onQueryChange = {
