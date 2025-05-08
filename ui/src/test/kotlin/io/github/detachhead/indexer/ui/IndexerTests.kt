@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import java.nio.file.Path
+import kotlin.io.path.createFile
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.div
 import kotlin.io.path.relativeTo
@@ -22,21 +23,25 @@ import org.junit.jupiter.api.io.TempDir
 class IndexerTests {
   @TempDir lateinit var tempDir: Path
 
-  fun ComposeUiTest.openFile(watchedPath: Path, file: Path) {
+  fun ComposeUiTest.expandTreeAndOpenFile(watchedPath: Path, file: Path) {
     // expand the root node with the watched path
     onNodeWithText(watchedPath.toString()).performClick()
     // traverse the tree, expanding each node until we get to the file
     file.relativeTo(watchedPath).forEach { onNodeWithText(it.toString()).performClick() }
   }
 
-  fun ComposeUiTest.setupWithTestFile(fileContent: String): Path {
-    val file = tempDir / "asdf"
-    val fileContent = fileContent
-    file.writeText(fileContent)
+  fun ComposeUiTest.createAppAndWatchTempDir() {
     setContent {
       val watchedPaths = remember { mutableStateListOf(tempDir) }
       Indexer(watchedPaths, onAddWatchedPaths = { watchedPaths.addAll(it) })
     }
+  }
+
+  fun ComposeUiTest.setupWithTestFile(fileContent: String): Path {
+    val file = tempDir / "asdf"
+    val fileContent = fileContent
+    file.writeText(fileContent)
+    createAppAndWatchTempDir()
     return file
   }
 
@@ -44,7 +49,7 @@ class IndexerTests {
   fun `open file`() = runComposeUiTest {
     val fileContent = "foo bar baz"
     val file = setupWithTestFile(fileContent)
-    openFile(tempDir, file)
+    expandTreeAndOpenFile(tempDir, file)
     onNodeWithTag("fileContents").assertTextEquals(fileContent)
   }
 
@@ -53,15 +58,32 @@ class IndexerTests {
     val fileContent = "foo bar baz"
     val file = setupWithTestFile(fileContent)
     onNodeWithText("Search for words").performTextInput(fileContent)
-    openFile(tempDir, file)
+    expandTreeAndOpenFile(tempDir, file)
     onNodeWithText("1 of 3").assertExists()
   }
 
   @Test
-  fun `ui updates when watched directory changes`() = runComposeUiTest {
+  fun `ui updates when new file is created`() = runComposeUiTest {
+    createAppAndWatchTempDir()
+    val file = tempDir / "asdf"
+    file.createFile()
+    expandTreeAndOpenFile(tempDir, file)
+  }
+
+  @Test
+  fun `ui updates when file content changes`() = runComposeUiTest {
+    val file = setupWithTestFile("foo bar baz")
+    expandTreeAndOpenFile(tempDir, file)
+    val newFileContent = "new content"
+    file.writeText(newFileContent)
+    onNodeWithTag("fileContents").assertTextEquals(newFileContent)
+  }
+
+  @Test
+  fun `ui updates when file is deleted`() = runComposeUiTest {
     val fileContent = "foo bar baz"
     val file = setupWithTestFile(fileContent)
-    openFile(tempDir, file)
+    expandTreeAndOpenFile(tempDir, file)
     file.deleteExisting()
     // if the file content is empty that means the file is no longer open because it was removed
     // from the tree
