@@ -123,8 +123,10 @@ fun App() {
             actions = {
               SearchBar(
                   searchText,
-                  onQueryChange = { searchText = it },
-                  onSearch = { coroutineScope.launch { search(indexer) } })
+                  onQueryChange = {
+                    searchText = it
+                    coroutineScope.launch { search(indexer) }
+                  })
               IconButtonWithTooltip(
                   icon = Icons.Outlined.Folder,
                   tooltip = "Watch folder",
