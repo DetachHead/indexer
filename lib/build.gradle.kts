@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.powerAssert)
   alias(libs.plugins.ktfmt)
   alias(libs.plugins.detekt)
+  alias(libs.plugins.dokka)
 }
 
 repositories { mavenCentral() }
