@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -26,6 +27,9 @@ fun FileContents(
       },
       textStyle = TextStyle(fontFamily = FontFamily.Monospace),
       modifier =
-          modifier.background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp),
+          modifier
+              .background(MaterialTheme.colorScheme.surfaceVariant)
+              .padding(horizontal = 16.dp)
+              .testTag("fileContents"),
   )
 }

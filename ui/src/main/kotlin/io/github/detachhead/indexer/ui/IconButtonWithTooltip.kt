@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 /**
@@ -42,7 +43,7 @@ fun IconButtonWithTooltip(
   ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.testTag(tooltip),
         enabled = disabledReason == null,
         colors = colors,
         interactionSource = interactionSource) {
