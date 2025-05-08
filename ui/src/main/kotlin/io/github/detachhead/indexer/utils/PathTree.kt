@@ -2,8 +2,13 @@ package io.github.detachhead.indexer.utils
 
 import java.nio.file.Path
 
-data class PathTree(val path: Path, private val getChildren: () -> Set<PathTree>) {
+class PathTree(val path: Path, private val getChildren: () -> Set<PathTree>) {
   val children by lazy { getChildren() }
+
+  override fun equals(other: Any?) =
+      other is PathTree && path == other.path && children == other.children
+
+  override fun hashCode(): Int = path.hashCode()
 }
 
 /**
@@ -13,7 +18,6 @@ data class PathTree(val path: Path, private val getChildren: () -> Set<PathTree>
  * this means the paths must have been fully resolved beforehand.
  */
 fun pathTree(rootPath: Path, allPaths: Set<Path>): PathTree {
-
   fun nested(rootPath: Path, allPaths: Set<Path>): PathTree {
     val children = allPaths.filter { it.parent == rootPath }.toSet()
     return PathTree(rootPath) { children.map { nested(it, allPaths) }.toSet() }
