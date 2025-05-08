@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-  implementation(project(":lib"))
+  implementation(project(":indexer"))
   implementation(compose.desktop.currentOs)
   implementation(compose.material3)
   implementation(compose.materialIconsExtended)
