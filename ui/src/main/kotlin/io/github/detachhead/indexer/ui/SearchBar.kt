@@ -25,6 +25,7 @@ fun SearchBar(
       placeholder = { Text("Search for words") },
       leadingIcon = { Icon(Icons.Outlined.Search, "Search") },
       shape = RoundedCornerShape(56.dp / 2),
+      singleLine = true,
       colors =
           TextFieldDefaults.colors(
               focusedIndicatorColor = Color.Transparent,
