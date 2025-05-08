@@ -1,11 +1,14 @@
 package io.github.detachhead.indexer.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Folder
@@ -23,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
@@ -55,6 +59,7 @@ fun App() {
   var openFileContent by remember { mutableStateOf("") }
   var highlightedTokenIndex by remember { mutableStateOf(-1) }
   var allFiles by remember { mutableStateOf(emptySet<Path>()) }
+  var loadingText by remember { mutableStateOf<String?>(null) }
 
   fun closeFile() {
     openFile = null
@@ -104,12 +109,14 @@ fun App() {
   val tokensForCurrentFile = searchResults?.get(openFile)
 
   suspend fun watchPath(file: PlatformFile?) {
+    loadingText = "Indexing"
     if (file == null) return
     val path = Path(file.path)
     watchedPaths.add(path)
     searchText = ""
     indexer.watchPath(path)
     allFiles = indexer.allFiles()
+    loadingText = null
   }
 
   Scaffold(
@@ -149,15 +156,39 @@ fun App() {
             })
       },
       bottomBar = {
-        BottomAppBar(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-          if (tokensForCurrentFile != null) {
-            TokenHighlightControls(
-                matchCount = tokensForCurrentFile.count(),
-                highlightedIndex = highlightedTokenIndex,
-                onChange = { highlightedTokenIndex = it })
+        Box {
+          BottomAppBar(
+              containerColor = MaterialTheme.colorScheme.primaryContainer,
+              contentColor = MaterialTheme.colorScheme.primary,
+          ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
+                  if (loadingText != null) {
+                    Text(text = "$loadingText...", Modifier.padding(start = 30.dp))
+                  }
+                  Spacer(modifier = Modifier.weight(1f))
+                  if (tokensForCurrentFile != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End) {
+                          TokenHighlightControls(
+                              matchCount = tokensForCurrentFile.count(),
+                              highlightedIndex = highlightedTokenIndex,
+                              onChange = { highlightedTokenIndex = it })
+                        }
+                  }
+                }
+          }
+          if (loadingText != null) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                // we're intentionally using material 2's progress indicator because it has square
+                // edges which i think looks better when it fills the max width, so we have to
+                // explicitly tell it to use the material 3 colours
+                color = MaterialTheme.colorScheme.primary,
+                backgroundColor = MaterialTheme.colorScheme.primaryContainer)
           }
         }
       }) { innerPadding ->
