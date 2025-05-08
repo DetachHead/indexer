@@ -38,6 +38,7 @@ import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.readText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 // TODO: ui unit tests
@@ -131,7 +132,7 @@ fun App() {
                   icon = Icons.Outlined.Folder,
                   tooltip = "Watch folder",
                   onClick = {
-                    coroutineScope.launch {
+                    coroutineScope.launch(Dispatchers.IO) {
                       val directory = FileKit.openDirectoryPicker()
                       watchPath(directory)
                     }

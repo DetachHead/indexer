@@ -2,6 +2,7 @@ package io.github.detachhead.indexer
 
 import io.methvin.watcher.DirectoryChangeEvent
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlinx.coroutines.CoroutineScope
@@ -30,7 +31,7 @@ internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : File
    * all watched files should have an entry in the index. if the entry is `null`, it means the file
    * has not been indexed yet and it will be lazily evaluated
    */
-  val index = mutableMapOf<Path, Tokens>()
+  val index = ConcurrentHashMap<Path, Tokens>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
     val path = event?.path()
