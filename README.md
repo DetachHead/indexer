@@ -32,10 +32,6 @@ fun main() {
 }
 ```
 
-## API
-
-
-
 ## Demo app
 
 This repo contains a demo app using the library written in Kotlin Compose.
