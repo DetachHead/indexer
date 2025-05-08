@@ -113,7 +113,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
 
   suspend fun watchPaths(paths: List<Path>) {
     if (paths.isEmpty()) return
-    loadingText = "Indexing..."
+    loadingText = "Indexing"
     paths.forEach { indexer.watchPath(it) }
     allFiles = indexer.allFiles()
     loadingText = null
