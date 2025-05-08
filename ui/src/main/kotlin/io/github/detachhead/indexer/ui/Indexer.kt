@@ -64,11 +64,17 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   }
 
   suspend fun search(indexer: SearchIndexer) {
-    val result = indexer.searchForAllTokens(searchText.split(" ").filter { it != "" }.toSet())
-    if (openFile !in result) {
-      closeFile()
+    val tokens = searchText.split(" ").filter { it != "" }.toSet()
+    if (tokens.isEmpty()) {
+      // don't bother searching for nothing, so just show all files instead
+      searchResults = null
+    } else {
+      val result = indexer.searchForAllTokens(tokens)
+      if (openFile !in result) {
+        closeFile()
+      }
+      searchResults = result
     }
-    searchResults = result
   }
 
   val indexer = remember {
