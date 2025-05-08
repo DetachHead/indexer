@@ -32,6 +32,10 @@ fun main() {
 }
 ```
 
+## API documentation
+
+[See here](https://detachhead.github.io/indexer/)
+
 ## Demo app
 
 This repo contains a demo app using the library written in Kotlin Compose.
