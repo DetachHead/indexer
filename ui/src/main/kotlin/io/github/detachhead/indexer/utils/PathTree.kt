@@ -17,11 +17,15 @@ class PathTree(val path: Path, private val getChildren: () -> Set<PathTree>) {
  *
  * this means the paths must have been fully resolved beforehand.
  */
+// this could be made more efficient if the paths were specified as a list in the order that they
+// were walked, but the api returns the paths as keys in a Map which is unordered, so we can't
 fun pathTree(rootPath: Path, allPaths: Set<Path>): PathTree {
   fun nested(rootPath: Path, allPaths: Set<Path>): PathTree {
-    val children = allPaths.filter { it.parent == rootPath }.toSet()
+    val children = allPaths.filter { it.parent == rootPath }
     return PathTree(rootPath) { children.map { nested(it, allPaths) }.toSet() }
   }
+  // add parents because the specified paths are only for files and does not include parent
+  // directories
   return nested(rootPath, (allPaths + allPaths.flatMap { it.getParents() }).toSet())
 }
 
