@@ -17,16 +17,6 @@ class PathUtilsTests {
   @TempDir lateinit var tempDir: Path
 
   @Test
-  fun isInDirectory() {
-    val directory = (tempDir / "dir").createDirectory()
-    val fileInDir = (directory / "foo").createFile()
-    assert(fileInDir.isInDirectory(directory))
-
-    val fileInOtherDir = ((tempDir / "otherDir").createDirectory() / "bar").createFile()
-    assert(!fileInOtherDir.isInDirectory(directory))
-  }
-
-  @Test
   fun forEachFastWalk() = runBlocking {
     val files = setOf(tempDir / "foo/bar/baz", tempDir / "foo/bar/qux", tempDir / "foo/asdf")
     files.forEach {
