@@ -18,7 +18,10 @@ internal fun Path.fix() = normalize().absolute()
 /** the current working directory */
 internal fun cwd() = Path(System.getProperty("user.dir"))
 
-/** faster version of `Path.walk` */
+/**
+ * faster, multithreaded version of `Path.walk`. [block] is executed in multiple threads so it must
+ * be thread-safe
+ */
 internal suspend fun Path.forEachFastWalk(block: (Path) -> Unit) = coroutineScope {
   val semaphore = Semaphore(permits = 64)
 
