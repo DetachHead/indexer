@@ -12,7 +12,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class IndexerTests {
+internal class IndexerTest {
   @TempDir lateinit var tempDir: Path
 
   @Test

@@ -20,7 +20,7 @@ import kotlin.test.Test
 import org.junit.jupiter.api.io.TempDir
 
 @OptIn(ExperimentalTestApi::class)
-class IndexerTests {
+class IndexerTest {
   @TempDir lateinit var tempDir: Path
 
   fun ComposeUiTest.expandTreeAndOpenFile(watchedPath: Path, file: Path) {
