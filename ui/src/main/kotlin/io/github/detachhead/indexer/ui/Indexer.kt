@@ -182,7 +182,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically) {
                   if (loadingText != null) {
-                    Text(text = "$loadingText...", Modifier.padding(start = 30.dp))
+                    Text("$loadingText...", Modifier.padding(start = 30.dp))
                   }
                   Spacer(modifier = Modifier.weight(1f))
                   if (tokensForCurrentFile != null) {
