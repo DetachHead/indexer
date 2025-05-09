@@ -28,9 +28,7 @@ internal suspend fun runWithWatcher(vararg paths: Path, block: suspend TestFileW
   try {
     watcher.block()
   } finally {
-    println("closing")
     watcher.close()
-    println("closed")
   }
 }
 
@@ -39,9 +37,6 @@ class FileWatcherTests {
 
   @Test
   fun `can watch directories`() = runBlocking {
-    // TODO: handling for if the directory doesn't exist yet?
-    // TODO: handling for if the directory gets deleted. currently it closes the watcher when that
-    // happens
     runWithWatcher(tempDir) {
       launch(Dispatchers.Default) {
         println("starting watcher in ${Thread.currentThread().name}")
@@ -61,7 +56,6 @@ class FileWatcherTests {
     val file2 = tempDir / "file2"
     val ignoredFile = tempDir / "file3"
     val files = listOf(file1, file2, ignoredFile)
-    // TODO: currently fails if the file doesnt exist yet, is this behavior ok?
     files.map { it.createFile() }
     runWithWatcher(file1, file2) {
       launch(Dispatchers.Default) { watch() }
