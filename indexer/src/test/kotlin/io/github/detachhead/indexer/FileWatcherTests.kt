@@ -65,7 +65,6 @@ class FileWatcherTests {
     files.map { it.createFile() }
     runWithWatcher(file1, file2) {
       launch(Dispatchers.Default) { watch() }
-      // TODO: is there a better way to wait for the event than hardcoded delays?
       waitForFileWatcher()
       assert(loggedEvents.isEmpty())
       files.map { it.writeText("asdf") }
@@ -80,7 +79,6 @@ class FileWatcherTests {
     file.createFile()
     runWithWatcher(file) {
       launch(Dispatchers.Default) { watch() }
-      // TODO: is there a better way to wait for the event than hardcoded delays?
       waitForFileWatcher()
       assert(loggedEvents.isEmpty())
       file.writeText("asdf")
