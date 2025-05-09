@@ -106,7 +106,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
           coroutineScope.launch { search(this@SearchIndexer) }
         }
         DirectoryChangeEvent.EventType.OVERFLOW -> {
-          TODO("what is overflow?")
+          println("overflow event occurred on $path")
         }
       }
     }

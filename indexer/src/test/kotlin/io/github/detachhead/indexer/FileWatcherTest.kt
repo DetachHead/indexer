@@ -16,10 +16,8 @@ import org.junit.jupiter.api.io.TempDir
 internal class TestFileWatcher(paths: Set<Path>) : FileWatcher(paths) {
   val loggedEvents = mutableListOf<DirectoryChangeEvent>()
 
-  override fun onChange(event: DirectoryChangeEvent?) {
-    if (event !== null) {
-      loggedEvents.add(event)
-    }
+  override fun onChange(event: DirectoryChangeEvent) {
+    loggedEvents.add(event)
   }
 }
 
