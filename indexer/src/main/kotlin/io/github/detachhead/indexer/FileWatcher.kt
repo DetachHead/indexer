@@ -69,7 +69,7 @@ internal abstract class FileWatcher(paths: Set<Path>) {
             .build()
   }
 
-  abstract fun onChange(event: DirectoryChangeEvent?)
+  abstract fun onChange(event: DirectoryChangeEvent)
 
   open fun watch() = watcher.watch()
 

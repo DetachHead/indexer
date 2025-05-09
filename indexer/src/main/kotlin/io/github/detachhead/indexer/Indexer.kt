@@ -30,14 +30,14 @@ internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : File
   /** all watched files should have an entry in the index. */
   val index = ConcurrentHashMap<Path, Tokens>()
 
-  override fun onChange(event: DirectoryChangeEvent?) {
-    val path = event?.path()
-    if (path == null) TODO("when is the event null?")
+  override fun onChange(event: DirectoryChangeEvent) {
+    val path = event.path()
     when (event.eventType()) {
       DirectoryChangeEvent.EventType.CREATE,
       DirectoryChangeEvent.EventType.MODIFY -> index[path] = indexer.splitToMap(path)
       DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
-      DirectoryChangeEvent.EventType.OVERFLOW -> TODO("what causes overflow?")
+      DirectoryChangeEvent.EventType.OVERFLOW ->
+          throw NotImplementedError("an overflow occurred on $path")
     }
     indexer.onChange(event)
   }
