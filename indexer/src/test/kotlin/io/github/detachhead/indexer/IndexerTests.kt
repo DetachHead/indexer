@@ -56,6 +56,11 @@ internal class IndexerTests {
     }
 
     @Test
+    fun searchForToken() = runTest {
+      assert(indexer.searchForToken("bar") == mapOf(fileWithToken to listOf(4)))
+    }
+
+    @Test
     fun searchForAllTokens() = runTest {
       assert(indexer.searchForAllTokens(setOf("bar", "asdf")) == emptyMap<Path, List<Token>>())
       assert(
