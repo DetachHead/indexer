@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import io.github.detachhead.indexer.SearchResults
 import io.github.detachhead.indexer.utils.SearchIndexer
+import io.github.detachhead.indexer.utils.pathTree
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
@@ -228,8 +229,8 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
         ) {
           Row(modifier = Modifier.fillMaxWidth()) {
             WatchedPathsTree(
-                watchedPaths = watchedPaths,
-                allPaths = searchResults?.keys ?: allFiles.toSet(),
+                watchedPaths =
+                    watchedPaths.map { pathTree(it, searchResults?.keys ?: allFiles.toSet()) },
                 onOpenFile = {
                   openFile = it
                   openFileContent = it.readText()
