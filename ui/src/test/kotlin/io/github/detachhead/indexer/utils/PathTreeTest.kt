@@ -3,7 +3,7 @@ package io.github.detachhead.indexer.utils
 import kotlin.io.path.Path
 import kotlin.test.Test
 
-class PathTreeTests {
+class PathTreeTest {
 
   @Test
   fun `pathTree function`() {

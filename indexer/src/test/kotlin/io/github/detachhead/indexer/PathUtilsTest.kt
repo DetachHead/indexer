@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.io.TempDir
 
-class PathUtilsTests {
+class PathUtilsTest {
   @TempDir lateinit var tempDir: Path
 
   @Test
