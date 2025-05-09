@@ -45,7 +45,7 @@ internal abstract class FileWatcher(paths: Set<Path>) {
           }
         } else {
           directory = firstPath.parent
-          if (!this.paths.allMatch { it.parent }) {
+          if (!this.paths.allEqual { it.parent }) {
             throw FileWatcherException("must have the same parent directory (expected $directory)")
           }
           if (!this.paths.all { it.isRegularFile() }) {

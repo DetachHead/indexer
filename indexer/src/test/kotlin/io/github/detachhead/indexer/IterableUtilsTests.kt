@@ -4,8 +4,8 @@ import kotlin.test.Test
 
 class IterableUtilsTests {
   @Test
-  fun allMatch() {
-    assert(listOf("a", "b", "c").allMatch { it.length })
-    assert(!listOf("a", "b", "cd").allMatch { it.length })
+  fun allEqual() {
+    assert(listOf("a", "b", "c").allEqual { it.length })
+    assert(!listOf("a", "b", "cd").allEqual { it.length })
   }
 }
