@@ -18,7 +18,6 @@ import cafe.adriel.bonsai.core.node.Leaf
 import cafe.adriel.bonsai.core.tree.Tree
 import cafe.adriel.bonsai.core.tree.TreeScope
 import io.github.detachhead.indexer.utils.PathTree
-import io.github.detachhead.indexer.utils.pathTree
 import java.nio.file.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
@@ -60,16 +59,15 @@ private fun TreeScope.FilteredPathsTree(trees: List<PathTree>) {
 
 @Composable
 fun WatchedPathsTree(
-    watchedPaths: List<Path>,
-    allPaths: Set<Path>,
+    watchedPaths: List<PathTree>,
     onOpenFile: (Path) -> Unit,
     modifier: Modifier = Modifier,
 ) {
   val tree =
       Tree<okio.Path> {
         watchedPaths.forEach { watchedPath ->
-          val okioPath = watchedPath.toOkioPath()
-          if (watchedPath.isRegularFile()) {
+          val okioPath = watchedPath.path.toOkioPath()
+          if (watchedPath.path.isRegularFile()) {
             Leaf(
                 okioPath,
                 customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") },
@@ -78,7 +76,7 @@ fun WatchedPathsTree(
             Branch(
                 okioPath,
                 customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched folder") }) {
-                  FilteredPathsTree(pathTree(watchedPath, allPaths).children.toList())
+                  FilteredPathsTree(watchedPath.children.toList())
                 }
           }
         }
