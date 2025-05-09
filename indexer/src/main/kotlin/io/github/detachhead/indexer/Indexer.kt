@@ -134,7 +134,6 @@ public abstract class Indexer {
             .flatMap { it.index.toList() }
             .toMap()
             .splitInto(Runtime.getRuntime().availableProcessors())
-    // TODO: this is pretty wacky, can it be simplified at all?
     indexEntryChunks
         .mapIndexed { index, indexEntries ->
           async(Dispatchers.Default) {
