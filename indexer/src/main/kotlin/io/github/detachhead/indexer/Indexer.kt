@@ -27,10 +27,7 @@ public typealias SearchResults = Map<Path, List<Token>>
 private typealias Tokens = Map<String, Set<Int>>
 
 internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : FileWatcher(paths) {
-  /**
-   * all watched files should have an entry in the index. if the entry is `null`, it means the file
-   * has not been indexed yet and it will be lazily evaluated
-   */
+  /** all watched files should have an entry in the index. */
   val index = ConcurrentHashMap<Path, Tokens>()
 
   override fun onChange(event: DirectoryChangeEvent?) {
@@ -95,7 +92,11 @@ public abstract class Indexer {
 
   /**
    * any actions to be performed when a file is added, removed or modified, in addition to updating
-   * the index. this method will always be called *after* the index has been updated
+   * the index. this method will always be called *after* the index has been updated.
+   *
+   * note that [DirectoryChangeEvent] is part of the
+   * [directory-watcher](https://github.com/gmethvin/directory-watcher) library which is included as
+   * an API dependency of this library
    */
   public open fun onChange(event: DirectoryChangeEvent) {}
 
