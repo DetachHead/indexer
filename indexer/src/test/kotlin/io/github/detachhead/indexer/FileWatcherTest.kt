@@ -90,15 +90,19 @@ class FileWatcherTests {
       val newFile = newDir / fileName
       originalDir.toFile().renameTo(newDir.toFile())
       waitForFileWatcher()
+      val duplicateEvent = ChangeEvent(DirectoryChangeEvent.EventType.CREATE, newFile, false)
+      assert(loggedEvents.size == 5)
+      // ignore order, since files are indexed in parallel the order is not guaranteed
       assert(
-          loggedEvents ==
-              listOf(
+          loggedEvents.toSet() ==
+              setOf(
                   ChangeEvent(DirectoryChangeEvent.EventType.DELETE, originalDir, true),
                   ChangeEvent(DirectoryChangeEvent.EventType.DELETE, originalFile, false),
                   ChangeEvent(DirectoryChangeEvent.EventType.CREATE, newDir, true),
-                  // duplicated event is intentional, see FileWatcher documentation
-                  ChangeEvent(DirectoryChangeEvent.EventType.CREATE, newFile, false),
-                  ChangeEvent(DirectoryChangeEvent.EventType.CREATE, newFile, false)))
+                  duplicateEvent))
+      // ensure that the create event for the new file is duplicated, which is intentional.
+      // see FileWatcher docs for more details
+      assert(loggedEvents.count { it == duplicateEvent } == 2)
     }
   }
 }

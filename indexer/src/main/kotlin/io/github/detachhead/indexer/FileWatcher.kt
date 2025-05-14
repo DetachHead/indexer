@@ -101,12 +101,12 @@ internal abstract class FileWatcher(paths: Set<Path>) {
 
                 // since i only have a windows machine, i don't know how it works on other operating
                 // systems so this implementation is based on my testing on windows
-                if (event.isDirectory && eventType == DirectoryChangeEvent.EventType.CREATE) {
-                  scope.launch {
+                scope.launch {
+                  if (event.isDirectory && eventType == DirectoryChangeEvent.EventType.CREATE) {
                     path.forEachFastWalk { onChange(ChangeEvent(eventType, it, it.isDirectory())) }
                   }
+                  onChange(ChangeEvent(eventType, path, event.isDirectory))
                 }
-                onChange(ChangeEvent(eventType, path, event.isDirectory))
               }
             }
             .build()
