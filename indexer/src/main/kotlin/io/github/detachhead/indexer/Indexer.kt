@@ -30,14 +30,27 @@ internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : File
   /** all watched files should have an entry in the index. */
   val index = ConcurrentHashMap<Path, Tokens>()
 
-  override fun onChange(event: DirectoryChangeEvent) {
-    val path = event.path()
-    when (event.eventType()) {
+  override fun onChange(event: ChangeEvent) {
+    val path = event.path
+    when (event.eventType) {
       DirectoryChangeEvent.EventType.CREATE,
-      DirectoryChangeEvent.EventType.MODIFY -> index[path] = indexer.splitToMap(path)
-      DirectoryChangeEvent.EventType.DELETE -> index.remove(path)
-      DirectoryChangeEvent.EventType.OVERFLOW ->
-          throw NotImplementedError("an overflow occurred on $path")
+      DirectoryChangeEvent.EventType.MODIFY -> {
+        // we only care about create/modify events for individual files when updating the index
+        if (!event.isDirectory) {
+          index[path] = indexer.splitToMap(path)
+        }
+      }
+      DirectoryChangeEvent.EventType.DELETE -> {
+        if (event.isDirectory) {
+          // if a directory is deleted, we may not get events for each of its children so we need to
+          // delete them here. see FileWatcher for more info
+          index.keys.forEach { if (it.isInDirectory(path)) index.remove(it) }
+        }
+        index.remove(path)
+      }
+      DirectoryChangeEvent.EventType.OVERFLOW -> {
+        throw NotImplementedError("an overflow occurred on $path")
+      }
     }
     indexer.onChange(event)
   }
@@ -94,11 +107,15 @@ public abstract class Indexer {
    * any actions to be performed when a file is added, removed or modified, in addition to updating
    * the index. this method will always be called *after* the index has been updated.
    *
-   * note that [DirectoryChangeEvent] is part of the
-   * [directory-watcher](https://github.com/gmethvin/directory-watcher) library which is included as
-   * an API dependency of this library
+   * note:
+   * - if a directory is added or modified, an event is emitted for the directory itself as well as
+   *   its children
+   * - if a directory is removed, an event is emitted for the directory itself, but an event may not
+   *   be emitted for its children
+   * - duplicate events can occur. this is due to the fact that the underlying file watcher library
+   *   behaves differently on windows depending on whether a directory was added or renamed.
    */
-  public open fun onChange(event: DirectoryChangeEvent) {}
+  public open fun onChange(event: ChangeEvent) {}
 
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>

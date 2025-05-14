@@ -13,7 +13,8 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
 /** whether the path is located inside the specified directory, including if it's nested */
-internal fun Path.isInDirectory(directory: Path) =
+// TODO: ideally this shouldn't be public, but it's used by the UI project as well
+public fun Path.isInDirectory(directory: Path) =
     this.normalize().toString().startsWith(directory.absolute().toString())
 
 /** most of the time, you want to call both [Path.normalize] and [Path.absolute] */
