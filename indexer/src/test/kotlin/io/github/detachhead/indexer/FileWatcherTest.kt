@@ -37,10 +37,7 @@ class FileWatcherTests {
   @Test
   fun `can watch directories`() = runBlocking {
     runWithWatcher(tempDir) {
-      launch(Dispatchers.Default) {
-        println("starting watcher in ${Thread.currentThread().name}")
-        watch()
-      }
+      launch(Dispatchers.Default) { watch() }
       waitForFileWatcher()
       val newFile = (tempDir / "asdf").createFile()
       waitForFileWatcher()
@@ -87,10 +84,7 @@ class FileWatcherTests {
     originalDir.createDirectory()
     val originalFile = (originalDir / fileName).createFile()
     runWithWatcher(tempDir) {
-      launch(Dispatchers.Default) {
-        println("starting watcher in ${Thread.currentThread().name}")
-        watch()
-      }
+      launch(Dispatchers.Default) { watch() }
       waitForFileWatcher()
       val newDir = tempDir / "dir2"
       val newFile = newDir / fileName
