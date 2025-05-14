@@ -82,6 +82,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   val indexer = remember {
     SearchIndexer {
       val path = it.path
+      println("filesystem change detected: $it")
       when (it.eventType) {
         DirectoryChangeEvent.EventType.CREATE -> {
           if (!it.isDirectory) {
