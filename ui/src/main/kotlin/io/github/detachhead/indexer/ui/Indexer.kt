@@ -81,10 +81,12 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
 
   val indexer = remember {
     SearchIndexer {
-      val path = it.path()
-      when (it.eventType()) {
+      val path = it.path
+      when (it.eventType) {
         DirectoryChangeEvent.EventType.CREATE -> {
-          allFiles.add(path)
+          if (!it.isDirectory) {
+            allFiles.add(path)
+          }
           coroutineScope.launch { search(this@SearchIndexer) }
         }
         DirectoryChangeEvent.EventType.MODIFY -> {
