@@ -21,7 +21,7 @@ internal class TestFileWatcher(paths: Set<Path>) : FileWatcher(paths) {
     loggedEvents.add(event)
   }
 
-  override fun onError(error: Throwable, path: Path) = throw IndexingException(error, path)
+  override fun onError(error: Throwable, rootPath: Path) = throw IndexingException(error, rootPath)
 }
 
 internal suspend fun runWithWatcher(vararg paths: Path, block: suspend TestFileWatcher.() -> Unit) {

@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 internal class FileWatcherException(message: String) :
-    Exception("all paths specified to ${FileWatcher::class.simpleName} $message")
+    UserIndexerError("all paths specified to ${FileWatcher::class.simpleName} $message")
 
 /**
  * note that [DirectoryChangeEvent.EventType] is part of the
@@ -48,7 +48,7 @@ internal abstract class FileWatcher(
    * need to specify its parent directory to the [watcher], then filter out events related to files
    * we don't care about
    */
-  val paths = paths.map { it.fix() }.toMutableSet()
+  val rootPaths = paths.map { it.fix() }.toMutableSet()
 
   /** the directory being watched by [watcher] */
   val directory: Path
@@ -60,9 +60,9 @@ internal abstract class FileWatcher(
   val isWatchingFiles: Boolean
 
   init {
-    val firstPath = this.paths.iterator().next()
+    val firstPath = this.rootPaths.iterator().next()
     isWatchingFiles =
-        if (this.paths.count() == 1) {
+        if (this.rootPaths.count() == 1) {
           if (firstPath.isDirectory()) {
             directory = firstPath
             false
@@ -72,10 +72,10 @@ internal abstract class FileWatcher(
           }
         } else {
           directory = firstPath.parent
-          if (!this.paths.allEqual { it.parent }) {
+          if (!this.rootPaths.allEqual { it.parent }) {
             throw FileWatcherException("must have the same parent directory (expected $directory)")
           }
-          if (!this.paths.all { it.isRegularFile() }) {
+          if (!this.rootPaths.all { it.isRegularFile() }) {
             throw FileWatcherException("must be files if more than one path is specified")
           }
           true
@@ -90,7 +90,7 @@ internal abstract class FileWatcher(
               // since DirectoryWatcher doesn't support watching an individual files we watch the
               // whole directory instead
               // and only call the event if the file we care about was changed
-              || path in this.paths) {
+              || path in this.rootPaths) {
                 val eventType = event.eventType()
                 // on windows, when a directory is renamed, a DELETE event is emitted for all of its
                 // children, but the corresponding CREATE event for the new directory name does not
@@ -124,5 +124,5 @@ internal abstract class FileWatcher(
 
   fun close() = watcher.close()
 
-  abstract fun onError(error: Throwable, path: Path)
+  abstract fun onError(error: Throwable, rootPath: Path)
 }

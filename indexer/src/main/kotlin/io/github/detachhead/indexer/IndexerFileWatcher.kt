@@ -50,17 +50,18 @@ internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : File
    */
   suspend fun walkAndWatch(scope: CoroutineScope) {
     if (isWatchingFiles) {
-      paths.forEach { index[it] = indexer.splitToMap(it) }
+      rootPaths.forEach { index[it] = indexer.splitToMap(it) }
     } else {
       directory.forEachFastWalk { index[it] = indexer.splitToMap(it) }
     }
     scope.launch(Dispatchers.Default) { watch() }
   }
 
-  override fun onError(error: Throwable, path: Path) {
+  override fun onError(error: Throwable, rootPath: Path) {
     if (error is Error) {
-      index.clear()
+      // this means the error could be memory related, so we clear the index to free up space
+      indexer.unwatchPathStrict(rootPath)
     }
-    indexer.onError(error, path)
+    indexer.onError(error, rootPath)
   }
 }

@@ -29,7 +29,7 @@ class SearchIndexer(
     onChangeFunction(event)
   }
 
-  override fun onError(error: Throwable, path: Path) {
-    onErrorFunction(error, path)
+  override fun onError(error: Throwable, rootPath: Path) {
+    onErrorFunction(error, rootPath)
   }
 }
