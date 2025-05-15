@@ -32,7 +32,7 @@ dependencies {
 
 compose.desktop {
   application {
-    mainClass = "io.gitlab.detachhead.indexer.ui.MainKt"
+    mainClass = "io.github.detachhead.indexer.ui.MainKt"
     nativeDistributions {
       packageName = "indexer"
       packageVersion = "1.0.0"
