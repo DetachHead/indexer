@@ -53,9 +53,6 @@ public abstract class Indexer {
     // if we are already watching a path inside this directory, unwatch it first so we can replace
     // it with this one to prevent duplicates
     val watchedPathToReplace = watchedRootPaths().find { it.isInDirectory(rootPath) }
-    if (watchedPathToReplace != null) {
-      unwatchPathStrict(watchedPathToReplace)
-    }
 
     // if this is a file and there's already a watcher watching its parent directory, just add that
     // file to the list
@@ -76,6 +73,11 @@ public abstract class Indexer {
       unwatchPathStrict(rootPath)
       return false
     }
+    // we wait until after the initial indexing is successful, otherwise we would need to re-watch
+    // the original path if it failed
+    if (watchedPathToReplace != null) {
+      unwatchPathStrict(watchedPathToReplace)
+    }
     return true
   }
 
@@ -87,6 +89,12 @@ public abstract class Indexer {
     val watcher = getWatcherForRootPath(rootPath)
     if (watcher == null) {
       return false
+    }
+    if (watcher.isWatchingFiles) {
+      // we are just removing a file from the watched directory instead of deleting the watcher
+      // itself
+      watcher.rootPaths.remove(rootPath)
+      watcher.index.remove(rootPath)
     }
     watcher.close()
     watchers.remove(watcher)
