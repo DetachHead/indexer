@@ -59,6 +59,8 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   val allFiles = remember { mutableStateListOf<Path>() }
   var searchText by remember { mutableStateOf("") }
 
+  val watchedPathTrees = watchedPaths.map { pathTree(it, searchResults?.keys ?: allFiles.toSet()) }
+
   fun closeFile() {
     openFile = null
     openFileContent = ""
@@ -217,8 +219,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
         ) {
           Row(modifier = Modifier.fillMaxWidth()) {
             WatchedPathsTree(
-                watchedPaths =
-                    watchedPaths.map { pathTree(it, searchResults?.keys ?: allFiles.toSet()) },
+                watchedPaths = watchedPathTrees,
                 onOpenFile = {
                   openFile = it
                   openFileContent = it.readText()
