@@ -51,7 +51,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Indexer(watchedPaths: List<Path>, onChangeWatchedPaths: suspend (List<Path>) -> Unit) {
+fun Indexer(
+    watchedPaths: LinkedHashSet<Path>,
+    onChangeWatchedPaths: suspend (LinkedHashSet<Path>) -> Unit
+) {
   val coroutineScope = rememberCoroutineScope()
 
   var loadingText by remember { mutableStateOf<String?>(null) }
@@ -135,7 +138,7 @@ fun Indexer(watchedPaths: List<Path>, onChangeWatchedPaths: suspend (List<Path>)
    * @return the paths that were not added because they were already being watched in another
    *   watched root path
    */
-  suspend fun watchPaths(paths: List<Path>): Set<Path> {
+  suspend fun watchPaths(paths: Collection<Path>): Set<Path> {
     if (paths.isEmpty()) return emptySet()
     loadingText = "Indexing"
     val alreadyWatchedPaths = paths.filter { !indexer.watchPath(it) }.toSet()
@@ -163,14 +166,8 @@ fun Indexer(watchedPaths: List<Path>, onChangeWatchedPaths: suspend (List<Path>)
               },
           duration = SnackbarDuration.Short)
     }
-    // we call watchedRootPaths here instead of passing paths because if any errors occurred during
-    // the initial indexing, the effected root paths won't be added, so we need to only display the
-    // paths that were successfully watched. we also have to remove duplicates, but we can't store
-    // it as a set because we want to preserve the order
-    val newWatchedPaths = indexer.watchedRootPaths()
-    onChangeWatchedPaths(
-        watchedPaths.filter { it in newWatchedPaths } +
-            indexer.watchedRootPaths().filter { it !in watchedPaths })
+    // we use a LinkedHashSet to preserve the order but remove duplicates
+    onChangeWatchedPaths(indexer.watchedRootPaths())
   }
 
   Scaffold(

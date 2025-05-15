@@ -34,7 +34,7 @@ class IndexerTest {
 
   fun ComposeUiTest.createAppAndWatchTempDir() {
     setContent {
-      var watchedPaths by remember { mutableStateOf(listOf(tempDir)) }
+      var watchedPaths by remember { mutableStateOf(LinkedHashSet(setOf(tempDir))) }
       Indexer(watchedPaths = watchedPaths, onChangeWatchedPaths = { watchedPaths = it })
     }
   }

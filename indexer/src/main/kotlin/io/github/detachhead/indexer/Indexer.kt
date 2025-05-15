@@ -30,7 +30,8 @@ public abstract class Indexer {
    * identified by the indexer, only the paths that were explicitly added using [watchPath]. use
    * [allFiles] for that instead.
    */
-  public fun watchedRootPaths(): Set<Path> = watchers.flatMap { it.rootPaths }.toSet()
+  public fun watchedRootPaths(): LinkedHashSet<Path> =
+      LinkedHashSet(watchers.flatMap { it.rootPaths })
 
   private fun getWatcherForRootPath(path: Path) = watchers.find { path in it.rootPaths }
 
