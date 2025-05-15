@@ -154,7 +154,11 @@ public abstract class Indexer {
   public abstract fun split(fileContent: String): Iterable<Token>
 
   internal fun splitToMap(path: Path): Tokens =
-      split(path.readText()).groupBy({ it.value }) { it.position }.mapValues { it.value.toSet() }
+      if (path.isRegularFile()) {
+        split(path.readText()).groupBy({ it.value }) { it.position }.mapValues { it.value.toSet() }
+      } else {
+        emptyMap()
+      }
 
   /**
    * searches for files that contain the specified token
