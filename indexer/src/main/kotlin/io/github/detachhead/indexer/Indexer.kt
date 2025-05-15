@@ -72,7 +72,9 @@ public abstract class Indexer {
       newWatcher.onError(e, rootPath)
       // if it's an OutOfMemoryError, the watcher's onError would've already unwatched the path. we
       // could use unwatchPath instead to avoid having to check this, but doing it this way avoids
-      // unnecessary checks
+      // unnecessary checks.
+      // we check for Error instead of OutOfMemoryError because coroutines catch it and raise a
+      // different Error
       if (@Suppress("InstanceOfCheckForException") e !is Error) {
         unwatchPathStrict(rootPath)
       }
