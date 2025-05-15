@@ -26,8 +26,7 @@ public typealias SearchResults = Map<Path, List<Token>>
  */
 private typealias Tokens = Map<String, Set<Int>>
 
-internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) :
-    FileWatcher(paths, indexer::onError) {
+internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : FileWatcher(paths) {
   /** all watched files should have an entry in the index. */
   val index = ConcurrentHashMap<Path, Tokens>()
 
@@ -68,6 +67,13 @@ internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) :
     }
     scope.launch(Dispatchers.Default) { watch() }
   }
+
+  override fun onError(error: Throwable, path: Path) {
+    if (error is Error) {
+      index.clear()
+    }
+    indexer.onError(error, path)
+  }
 }
 
 public abstract class Indexer {
@@ -99,8 +105,8 @@ public abstract class Indexer {
     watchers.add(newWatcher)
     try {
       newWatcher.walkAndWatch(scope)
-    } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-      onError(e, path)
+    } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+      newWatcher.onError(e, path)
     }
     return true
   }
@@ -123,12 +129,15 @@ public abstract class Indexer {
   public open fun onChange(event: ChangeEvent) {}
 
   /**
-   * any [Exception]s raised during the indexing / file watching process
+   * any errors raised during the indexing / file watching process
    *
-   * @param error the [Exception] that was raised
+   * note that if the error was a [OutOfMemoryError], the index will be cleared for the watched path
+   * to prevent any further [OutOfMemoryError]s
+   *
+   * @param error the error that was raised
    * @param path the watched [Path] that the exception occurred on
    */
-  public abstract fun onError(error: Exception, path: Path)
+  public abstract fun onError(error: Throwable, path: Path)
 
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>

@@ -14,13 +14,14 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-internal class TestFileWatcher(paths: Set<Path>) :
-    FileWatcher(paths, onError = { exception, path -> throw IndexingException(exception, path) }) {
+internal class TestFileWatcher(paths: Set<Path>) : FileWatcher(paths) {
   val loggedEvents = mutableListOf<ChangeEvent>()
 
   override fun onChange(event: ChangeEvent) {
     loggedEvents.add(event)
   }
+
+  override fun onError(error: Throwable, path: Path) = throw IndexingException(error, path)
 }
 
 internal suspend fun runWithWatcher(vararg paths: Path, block: suspend TestFileWatcher.() -> Unit) {

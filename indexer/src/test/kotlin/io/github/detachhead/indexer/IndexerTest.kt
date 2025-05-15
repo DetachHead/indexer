@@ -12,7 +12,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 
 class TestIndexer : WhitespaceIndexer() {
-  override fun onError(error: Exception, path: Path) = throw IndexingException(error, path)
+  override fun onError(error: Throwable, path: Path) = throw IndexingException(error, path)
 }
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
