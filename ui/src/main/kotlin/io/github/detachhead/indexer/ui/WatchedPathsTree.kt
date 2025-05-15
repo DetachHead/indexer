@@ -67,17 +67,19 @@ fun WatchedPathsTree(
       Tree<okio.Path> {
         watchedPaths.forEach { watchedPath ->
           val okioPath = watchedPath.path.toOkioPath()
-          if (watchedPath.path.isRegularFile()) {
-            Leaf(
-                okioPath,
-                customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") },
-            )
-          } else {
-            Branch(
-                okioPath,
-                customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched folder") }) {
-                  FilteredPathsTree(watchedPath.children.toList())
-                }
+          key(okioPath) {
+            if (watchedPath.path.isRegularFile()) {
+              Leaf(
+                  okioPath,
+                  customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched file") },
+              )
+            } else {
+              Branch(
+                  okioPath,
+                  customIcon = { Icon(Icons.AutoMirrored.Filled.ManageSearch, "Watched folder") }) {
+                    FilteredPathsTree(watchedPath.children.toList())
+                  }
+            }
           }
         }
       }

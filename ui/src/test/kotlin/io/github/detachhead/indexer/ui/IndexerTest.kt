@@ -1,7 +1,9 @@
 package io.github.detachhead.indexer.ui
 
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
@@ -32,8 +34,8 @@ class IndexerTest {
 
   fun ComposeUiTest.createAppAndWatchTempDir() {
     setContent {
-      val watchedPaths = remember { mutableStateListOf(tempDir) }
-      Indexer(watchedPaths, onAddWatchedPaths = { watchedPaths.addAll(it) })
+      var watchedPaths by remember { mutableStateOf(listOf(tempDir)) }
+      Indexer(watchedPaths = watchedPaths, onChangeWatchedPaths = { watchedPaths = it })
     }
   }
 

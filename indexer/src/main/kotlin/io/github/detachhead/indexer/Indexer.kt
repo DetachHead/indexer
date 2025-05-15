@@ -15,39 +15,94 @@ import kotlinx.coroutines.coroutineScope
  */
 public typealias SearchResults = Map<Path, List<Token>>
 
+/**
+ * main class for the indexer library. an instance of [Indexer] can watch multiple "root paths"
+ * which can be either files or directories. this class can also be extended with custom text
+ * splitting functionality by overriding [split]
+ */
 public abstract class Indexer {
   internal val watchers = mutableSetOf<IndexerFileWatcher>()
 
   internal val scope = CoroutineScope(Dispatchers.Default)
 
   /**
-   * adds the specified path to the list of paths to be watched / indexed
+   * all root paths watched by the indexer. note that this does mean all files that have been
+   * identified by the indexer, only the paths that were explicitly added using [watchPath]. use
+   * [allFiles] for that instead.
+   */
+  public fun watchedRootPaths(): Set<Path> = watchers.flatMap { it.rootPaths }.toSet()
+
+  private fun getWatcherForRootPath(path: Path) = watchers.find { path in it.rootPaths }
+
+  private fun getWatcherContainingPath(path: Path) =
+      watchers.find { watcher -> watcher.rootPaths.any { path.isInDirectory(it) } }
+
+  /**
+   * adds the specified path to the list of paths to be watched / indexed. if the [rootPath] is
+   * already being watched either directly or indirectly as a child of an already watched root path,
+   * this function will do nothing and return `false`.
    *
    * @return `true` if the path was added, `false` if it was already being watched
    */
-  public suspend fun watchPath(path: Path): Boolean {
-    // if there's already a watcher watching this exact path, do nothing
-    if (watchers.any { path in it.paths }) {
+  public suspend fun watchPath(rootPath: Path): Boolean {
+    // if this path is already being watched by an existing watcher, do nothing
+    if (getWatcherContainingPath(rootPath) != null) {
       return false
     }
+
+    // if we are already watching a path inside this directory, unwatch it first so we can replace
+    // it with this one to prevent duplicates
+    val watchedPathToReplace = watchedRootPaths().find { it.isInDirectory(rootPath) }
+    if (watchedPathToReplace != null) {
+      unwatchPathStrict(watchedPathToReplace)
+    }
+
     // if this is a file and there's already a watcher watching its parent directory, just add that
     // file to the list
     // files for the existing watcher
-    if (path.isRegularFile()) {
-      val existingWatcher = watchers.find { it.directory == path.parent }
+    if (rootPath.isRegularFile()) {
+      val existingWatcher = watchers.find { it.directory == rootPath.parent }
       if (existingWatcher != null) {
-        existingWatcher.paths.add(path)
+        existingWatcher.rootPaths.add(rootPath)
         return true
       }
     }
-    val newWatcher = IndexerFileWatcher(setOf(path), indexer = this)
+    val newWatcher = IndexerFileWatcher(setOf(rootPath), indexer = this)
     watchers.add(newWatcher)
     try {
       newWatcher.walkAndWatch(scope)
     } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
-      newWatcher.onError(e, path)
+      newWatcher.onError(e, rootPath)
+      unwatchPathStrict(rootPath)
+      return false
     }
     return true
+  }
+
+  /**
+   * unwatches the specified [rootPath]. note that only root paths can be unwatched (ie. the paths
+   * returned from [watchedRootPaths])
+   */
+  public fun unwatchPath(rootPath: Path): Boolean {
+    val watcher = getWatcherForRootPath(rootPath)
+    if (watcher == null) {
+      return false
+    }
+    watcher.close()
+    watchers.remove(watcher)
+    return true
+  }
+
+  /**
+   * stricter version of [unwatchPath] that raises an exception if the root path is not being
+   * watched. the public version of this function doesn't do this because if the path isn't being
+   * watched then it's already in the desired state, so it's unlikely that the user would want to
+   * throw an exception here.
+   */
+  internal fun unwatchPathStrict(rootPath: Path) {
+    if (!unwatchPath(rootPath)) {
+      throw InternalIndexerError("attempted to unwatch $rootPath but it's not being watched")
+    }
   }
 
   /** all files found by the indexer */
@@ -68,15 +123,19 @@ public abstract class Indexer {
   public open fun onChange(event: ChangeEvent) {}
 
   /**
-   * any errors raised during the indexing / file watching process
+   * any errors raised during the indexing / file watching process.
    *
-   * note that if the error was a [OutOfMemoryError], the index will be cleared for the watched path
-   * to prevent any further [OutOfMemoryError]s
+   * note:
+   * - if the error occurs during the initial indexing of a watched root path, it will be assumed
+   *   that the path cannot be watched and [unwatchPath] will automatically be called on the
+   *   [rootPath]
+   * - if the error was a [OutOfMemoryError], [unwatchPath] will automatically be called on the
+   *   [rootPath] to free up memory
    *
    * @param error the error that was raised
-   * @param path the watched [Path] that the exception occurred on
+   * @param rootPath the watched [Path] that the error occurred on
    */
-  public abstract fun onError(error: Throwable, path: Path)
+  public abstract fun onError(error: Throwable, rootPath: Path)
 
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>
