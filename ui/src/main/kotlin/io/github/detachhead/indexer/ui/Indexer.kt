@@ -83,6 +83,8 @@ fun Indexer(
       val result = indexer.searchForAllTokens(tokens)
       if (openFile !in result) {
         closeFile()
+      } else {
+        highlightedTokenIndex = 0
       }
       searchResults = result
     }
