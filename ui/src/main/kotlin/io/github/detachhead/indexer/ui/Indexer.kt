@@ -16,6 +16,9 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
@@ -58,6 +61,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   var highlightedTokenIndex by remember { mutableStateOf(-1) }
   val allFiles = remember { mutableStateListOf<Path>() }
   var searchText by remember { mutableStateOf("") }
+  val snackbarHostState = remember { SnackbarHostState() }
 
   val watchedPathTrees = watchedPaths.map { pathTree(it, searchResults?.keys ?: allFiles.toSet()) }
 
@@ -82,39 +86,48 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   }
 
   val indexer = remember {
-    SearchIndexer {
-      val path = it.path
-      println("filesystem change detected: $it")
-      when (it.eventType) {
-        DirectoryChangeEvent.EventType.CREATE -> {
-          if (!it.isDirectory) {
-            allFiles.add(path)
-          }
-          coroutineScope.launch { search(this@SearchIndexer) }
-        }
-        DirectoryChangeEvent.EventType.MODIFY -> {
-          coroutineScope.launch {
-            search(this@SearchIndexer)
-            if (openFile == path && searchResults?.contains(path) != false) {
-              openFileContent = path.readText()
-              // we go back to the first search result in the file in case tokens were
-              // rearranged/deleted
-              highlightedTokenIndex = 0
+    SearchIndexer(
+        onChangeFunction = {
+          val path = it.path
+          println("filesystem change detected: $it")
+          when (it.eventType) {
+            DirectoryChangeEvent.EventType.CREATE -> {
+              if (!it.isDirectory) {
+                allFiles.add(path)
+              }
+              coroutineScope.launch { search(this@SearchIndexer) }
+            }
+            DirectoryChangeEvent.EventType.MODIFY -> {
+              coroutineScope.launch {
+                search(this@SearchIndexer)
+                if (openFile == path && searchResults?.contains(path) != false) {
+                  openFileContent = path.readText()
+                  // we go back to the first search result in the file in case tokens were
+                  // rearranged/deleted
+                  highlightedTokenIndex = 0
+                }
+              }
+            }
+            DirectoryChangeEvent.EventType.DELETE -> {
+              if (openFile == path) {
+                closeFile()
+              }
+              allFiles.remove(path)
+              coroutineScope.launch { search(this@SearchIndexer) }
+            }
+            DirectoryChangeEvent.EventType.OVERFLOW -> {
+              println("overflow event occurred on $path")
             }
           }
-        }
-        DirectoryChangeEvent.EventType.DELETE -> {
-          if (openFile == path) {
-            closeFile()
+        },
+        onErrorFunction = { exception, path ->
+          coroutineScope.launch {
+            snackbarHostState.showSnackbar(
+                message = "An error occurred while indexing $path: $exception",
+                actionLabel = "Dismiss",
+                duration = SnackbarDuration.Long)
           }
-          allFiles.remove(path)
-          coroutineScope.launch { search(this@SearchIndexer) }
-        }
-        DirectoryChangeEvent.EventType.OVERFLOW -> {
-          println("overflow event occurred on $path")
-        }
-      }
-    }
+        })
   }
   val tokensForCurrentFile = searchResults?.get(openFile)
 
@@ -137,6 +150,7 @@ fun Indexer(watchedPaths: List<Path>, onAddWatchedPaths: suspend (List<Path>) ->
   }
 
   Scaffold(
+      snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
       topBar = {
         TopAppBar(
             colors =

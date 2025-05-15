@@ -3,6 +3,7 @@ package io.github.detachhead.indexer.utils
 import io.github.detachhead.indexer.ChangeEvent
 import io.github.detachhead.indexer.Token
 import io.github.detachhead.indexer.WhitespaceIndexer
+import java.nio.file.Path
 
 private fun String.isBinaryContent(): Boolean {
   for (char in this) {
@@ -13,8 +14,10 @@ private fun String.isBinaryContent(): Boolean {
   return false
 }
 
-class SearchIndexer(private val onChangeFunction: SearchIndexer.(ChangeEvent) -> Unit) :
-    WhitespaceIndexer() {
+class SearchIndexer(
+    private val onChangeFunction: SearchIndexer.(ChangeEvent) -> Unit,
+    private val onErrorFunction: SearchIndexer.(Exception, Path) -> Unit
+) : WhitespaceIndexer() {
   override fun split(fileContent: String): List<Token> =
       if (fileContent.isBinaryContent()) {
         emptyList()
@@ -24,5 +27,9 @@ class SearchIndexer(private val onChangeFunction: SearchIndexer.(ChangeEvent) ->
 
   override fun onChange(event: ChangeEvent) {
     onChangeFunction(event)
+  }
+
+  override fun onError(error: Exception, path: Path) {
+    onErrorFunction(error, path)
   }
 }

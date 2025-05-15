@@ -11,6 +11,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 
+class TestIndexer : WhitespaceIndexer() {
+  override fun onError(error: Exception, path: Path) = throw IndexingException(error, path)
+}
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class IndexerTest {
   @TempDir lateinit var tempDir: Path
@@ -20,7 +24,7 @@ internal class IndexerTest {
     val fileWithToken = tempDir / "asdf"
     fileWithToken.writeText("foo bar baz")
     (tempDir / "asdf2").writeText("a b c")
-    val indexer = WhitespaceIndexer()
+    val indexer = TestIndexer()
     indexer.watchPath(tempDir)
     waitForFileWatcher()
     assert(indexer.searchForToken("bar") == mapOf(fileWithToken to listOf(4)))
@@ -28,7 +32,7 @@ internal class IndexerTest {
 
   @Test
   fun `indexes files created while the watcher is running`() = runBlocking {
-    val indexer = WhitespaceIndexer()
+    val indexer = TestIndexer()
     indexer.watchPath(tempDir)
     waitForFileWatcher()
     val fileWithToken = tempDir / "asdf"
@@ -47,7 +51,7 @@ internal class IndexerTest {
 
     @BeforeEach
     fun setUp() = runBlocking {
-      indexer = WhitespaceIndexer()
+      indexer = TestIndexer()
       indexer.watchPath(tempDir)
       waitForFileWatcher()
       fileWithToken = tempDir / "asdf"
