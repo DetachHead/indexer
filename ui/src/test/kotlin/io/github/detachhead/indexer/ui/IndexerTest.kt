@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runComposeUiTest
 import java.nio.file.Path
 import kotlin.io.path.createFile
@@ -88,5 +89,18 @@ class IndexerTest {
     // if the file content is empty that means the file is no longer open because it was removed
     // from the tree
     onNodeWithTag("fileContents").assertTextEquals("")
+  }
+
+  @Test
+  fun `highlighted token index updates correctly`() = runComposeUiTest {
+    val fileContent = "foo foo foo bar"
+    val file = setupWithTestFile(fileContent)
+    onNodeWithText("Search for words").performTextInput("foo")
+    expandTreeAndOpenFile(tempDir, file)
+    onNodeWithText("1 of 3").assertExists()
+    repeat(2) { onNodeWithTag("Next match").performClick() }
+    onNodeWithText("3 of 3").assertExists()
+    onNodeWithText("foo").performTextReplacement("bar")
+    onNodeWithText("1 of 1").assertExists()
   }
 }
