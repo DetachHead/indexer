@@ -16,7 +16,7 @@ private fun String.isBinaryContent(): Boolean {
 
 class SearchIndexer(
     private val onChangeFunction: SearchIndexer.(ChangeEvent) -> Unit,
-    private val onErrorFunction: SearchIndexer.(Exception, Path) -> Unit
+    private val onErrorFunction: SearchIndexer.(Throwable, Path) -> Unit
 ) : WhitespaceIndexer() {
   override fun split(fileContent: String): List<Token> =
       if (fileContent.isBinaryContent()) {
@@ -29,7 +29,7 @@ class SearchIndexer(
     onChangeFunction(event)
   }
 
-  override fun onError(error: Exception, path: Path) {
+  override fun onError(error: Throwable, path: Path) {
     onErrorFunction(error, path)
   }
 }

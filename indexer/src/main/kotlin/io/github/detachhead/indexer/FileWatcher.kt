@@ -38,7 +38,6 @@ public data class ChangeEvent(
  */
 internal abstract class FileWatcher(
     paths: Set<Path>,
-    private val onError: (Exception, Path) -> Unit
 ) {
   internal val watcher: DirectoryWatcher
 
@@ -110,7 +109,7 @@ internal abstract class FileWatcher(
                   }
                   try {
                     onChange(ChangeEvent(eventType, path, event.isDirectory))
-                  } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                  } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
                     onError(e, path)
                   }
                 }
@@ -124,4 +123,6 @@ internal abstract class FileWatcher(
   open fun watch() = watcher.watch()
 
   fun close() = watcher.close()
+
+  abstract fun onError(error: Throwable, path: Path)
 }
