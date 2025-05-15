@@ -70,7 +70,12 @@ public abstract class Indexer {
       newWatcher.walkAndWatch(scope)
     } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
       newWatcher.onError(e, rootPath)
-      unwatchPathStrict(rootPath)
+      // if it's an OutOfMemoryError, the watcher's onError would've already unwatched the path. we
+      // could use unwatchPath instead to avoid having to check this, but doing it this way avoids
+      // unnecessary checks
+      if (@Suppress("InstanceOfCheckForException") e !is Error) {
+        unwatchPathStrict(rootPath)
+      }
       return false
     }
     // we wait until after the initial indexing is successful, otherwise we would need to re-watch
