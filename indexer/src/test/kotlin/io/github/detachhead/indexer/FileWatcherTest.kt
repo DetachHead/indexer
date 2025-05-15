@@ -14,7 +14,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
-internal class TestFileWatcher(paths: Set<Path>) : FileWatcher(paths) {
+internal class TestFileWatcher(paths: Set<Path>) :
+    FileWatcher(paths, onError = { exception, path -> throw IndexingException(exception, path) }) {
   val loggedEvents = mutableListOf<ChangeEvent>()
 
   override fun onChange(event: ChangeEvent) {

@@ -26,7 +26,8 @@ public typealias SearchResults = Map<Path, List<Token>>
  */
 private typealias Tokens = Map<String, Set<Int>>
 
-internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) : FileWatcher(paths) {
+internal class IndexerFileWatcher(paths: Set<Path>, val indexer: Indexer) :
+    FileWatcher(paths, indexer::onError) {
   /** all watched files should have an entry in the index. */
   val index = ConcurrentHashMap<Path, Tokens>()
 
@@ -96,7 +97,11 @@ public abstract class Indexer {
     }
     val newWatcher = IndexerFileWatcher(setOf(path), indexer = this)
     watchers.add(newWatcher)
-    newWatcher.walkAndWatch(scope)
+    try {
+      newWatcher.walkAndWatch(scope)
+    } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+      onError(e, path)
+    }
     return true
   }
 
@@ -116,6 +121,14 @@ public abstract class Indexer {
    *   behaves differently on windows depending on whether a directory was added or renamed.
    */
   public open fun onChange(event: ChangeEvent) {}
+
+  /**
+   * any [Exception]s raised during the indexing / file watching process
+   *
+   * @param error the [Exception] that was raised
+   * @param path the watched [Path] that the exception occurred on
+   */
+  public abstract fun onError(error: Exception, path: Path)
 
   /** a custom mechanism for splitting the file content into tokens */
   public abstract fun split(fileContent: String): Iterable<Token>

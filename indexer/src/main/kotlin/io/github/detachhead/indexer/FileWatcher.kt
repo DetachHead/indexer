@@ -36,7 +36,10 @@ public data class ChangeEvent(
  * this is because the underlying file watcher library doesn't always emit these events (on windows
  * at least), so we re-emit them to be safe.
  */
-internal abstract class FileWatcher(paths: Set<Path>) {
+internal abstract class FileWatcher(
+    paths: Set<Path>,
+    private val onError: (Exception, Path) -> Unit
+) {
   internal val watcher: DirectoryWatcher
 
   private val scope = CoroutineScope(Dispatchers.IO)
@@ -105,7 +108,11 @@ internal abstract class FileWatcher(paths: Set<Path>) {
                   if (event.isDirectory && eventType == DirectoryChangeEvent.EventType.CREATE) {
                     path.forEachFastWalk { onChange(ChangeEvent(eventType, it, it.isDirectory())) }
                   }
-                  onChange(ChangeEvent(eventType, path, event.isDirectory))
+                  try {
+                    onChange(ChangeEvent(eventType, path, event.isDirectory))
+                  } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                    onError(e, path)
+                  }
                 }
               }
             }
