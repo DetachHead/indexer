@@ -1,8 +1,8 @@
 package io.github.detachhead.indexer.utils
 
 import io.github.detachhead.indexer.ChangeEvent
+import io.github.detachhead.indexer.Indexer
 import io.github.detachhead.indexer.Token
-import io.github.detachhead.indexer.WhitespaceIndexer
 import java.nio.file.Path
 
 private fun String.isBinaryContent(): Boolean {
@@ -17,12 +17,12 @@ private fun String.isBinaryContent(): Boolean {
 class SearchIndexer(
     private val onChangeFunction: SearchIndexer.(ChangeEvent) -> Unit,
     private val onErrorFunction: SearchIndexer.(Throwable, Path) -> Unit
-) : WhitespaceIndexer() {
+) : Indexer() {
   override fun split(fileContent: String): List<Token> =
       if (fileContent.isBinaryContent()) {
         emptyList()
       } else {
-        super.split(fileContent)
+        Regex("\\w+").findAll(fileContent).map { Token(it.value, it.range.first) }.toList()
       }
 
   override fun onChange(event: ChangeEvent) {
