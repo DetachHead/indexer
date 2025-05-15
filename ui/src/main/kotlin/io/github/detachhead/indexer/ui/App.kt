@@ -11,6 +11,6 @@ import java.nio.file.Path
 fun App() {
   // this is a separate component to Indexer so that the unit tests can pass the watchedPaths into
   // the indexer
-  var watchedPaths by remember { mutableStateOf(emptyList<Path>()) }
+  var watchedPaths by remember { mutableStateOf(LinkedHashSet<Path>()) }
   Indexer(watchedPaths = watchedPaths, onChangeWatchedPaths = { watchedPaths = it })
 }
